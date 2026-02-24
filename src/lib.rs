@@ -36,6 +36,69 @@ impl RiscvCpu {
         u32::from_le_bytes(bytes.try_into().unwrap())
     }
 
+    fn write_reg(&mut self, reg: u32, value: u32) {
+        if reg != 0 {
+            self.regs[reg as usize] = value;
+        }
+    }
+
+    pub fn handle_rtype(&mut self, instruction: u32) {
+        let rd = (instruction >> 7) & 0x1F;
+        let funct3 = (instruction >> 12) & 0x7;
+        let rs1 = (instruction >> 15) & 0x1F;
+        let rs2 = (instruction >> 20) & 0x1F;
+        let funct7 = (instruction >> 25) & 0x7f;
+
+        let rs1_value = self.regs[rs1 as usize];
+        let rs2_value = self.regs[rs2 as usize];
+
+        let rd_value = match funct3 {
+            0x0 => {
+                match funct7 {
+                    0x00 => rs1_value.wrapping_add(rs2_value),
+                    0x20 => rs1_value.wrapping_sub(rs2_value),
+                    _ => panic!("Invalid funct7 {:#x} for funct3 0x0", funct7),
+                }
+            }
+            0x4 => rs1_value ^ rs2_value,
+            0x6 => rs1_value | rs2_value,
+            0x7 => rs1_value & rs2_value,
+            0x1 => rs1_value << (rs2_value & 0x1F),
+            0x5 => {
+                match funct7 {
+                    0x00 => {
+                        rs1_value >> (rs2_value & 0x1F)
+                    }
+                    0x20 => {
+                        ((rs1_value as i32) >> (rs2_value & 0x1F)) as u32
+                    }
+                    _ => {
+                        panic!("Invalid funct7 {:#x} for funct3 {:#x}",funct3, funct7);
+                    }
+                }
+            }
+            0x2 => {
+                if (rs1_value as i32) < (rs2_value as i32) {
+                    1
+                } else {
+                    0
+                }
+            }
+            0x3 => {
+                if rs1_value < rs2_value {
+                    1
+                } else {
+                    0
+                }
+            }
+            _ => {
+                panic!("Invalid funct3 {:#x}", funct3)
+            }
+        };
+
+        self.write_reg(rd, rd_value);
+    }
+
     pub fn handle_itype(&mut self, instruction: u32) {
         let rd = (instruction >> 7) & 0x1F;
         let funct3 = (instruction >> 12) & 0x7;
@@ -47,10 +110,6 @@ impl RiscvCpu {
         println!("Fuct3: {:#03x}", funct3);
         println!("rs: {:#07x}", rs);
         println!("Sign Extended Imm: {:#034x}", imm);
-
-        if rd == 0x0 {
-            return
-        }
 
         let rd_value = match funct3 {
             0x0 => {
@@ -116,6 +175,9 @@ impl RiscvCpu {
             }
         };
 
-        self.regs[rd as usize] = rd_value;
+        if rd != 0 {
+            self.write_reg(rd, rd_value);
+        }
     }
+
 }
