@@ -16,18 +16,20 @@ impl RiscvCpu {
     pub fn step(&mut self) {
         let instruction: u32 = self.fetch();
 
+        let mut next_pc = self.pc + 4;
+
         println!("PC: {:#010x} | Instruction: {:#010x}", self.pc, instruction);
 
         let opcode = instruction & 0x7f;
         
         match opcode {
-            0x13 => {
-                self.handle_itype(instruction);
-            }
+            0x33 => self.handle_rtype(instruction),
+            0x13 => self.handle_itype(instruction),
+            0x63 => self.handle_btype(instruction, &mut next_pc),
             _ =>  println!("don't have this yet"),
         }
 
-        self.pc += 4;
+        self.pc = next_pc;
     }
 
     fn fetch(&self) -> u32 {
@@ -112,32 +114,11 @@ impl RiscvCpu {
         println!("Sign Extended Imm: {:#034x}", imm);
 
         let rd_value = match funct3 {
-            0x0 => {
-                let result = (rs_value as i32 + imm) as u32;
-                println!("rd: {} = rs: {} + imm: {} ", result, rs_value, imm);
-                result
-            }
-            0x4 => {
-                let result = rs_value ^ (imm as u32);
-                println!("rd: {} = rs: {} ^ imm: {} ", result, rs_value, imm);
-                result
-            }
-            0x6 => {
-                let result = rs_value | (imm as u32);
-                println!("rd: {} = rs: {} | imm: {} ", result, rs_value, imm);
-                result
-            }
-            0x7 => {
-                let result = rs_value & (imm as u32);
-                println!("rd: {} = rs: {} & imm: {} ", result, rs_value, imm);
-                result
-            }
-            0x1 => {
-                let shift = imm & 0x1F;
-                let result = rs_value << shift;
-                println!("rd: {:#010x} = rs: {:#010x} << imm[0:4]: {} ", result, rs_value, shift);
-                result
-            }
+            0x0 => (rs_value as i32 + imm) as u32,
+            0x4 => rs_value ^ (imm as u32),
+            0x6 => rs_value | (imm as u32),
+            0x7 => rs_value & (imm as u32),
+            0x1 => rs_value << (imm & 0x1F),
             0x5 => {
                 let funct7 = (instruction >> 25) & 0x7F;
                 let shamt = imm & 0x1F;
@@ -180,4 +161,38 @@ impl RiscvCpu {
         }
     }
 
+    pub fn handle_btype(&mut self, instruction: u32, next_pc: &mut u32) {
+        let funct3 = (instruction >> 12) & 0x7;
+        let rs1 = (instruction >> 15) & 0x1F;
+        let rs2 = (instruction >> 20) & 0x1F;
+
+        let b12 = (instruction >> 31) & 0x1;
+        let b11 = (instruction >> 7) & 0x1;
+        let b10_5 = (instruction >> 25) & 0x3F;
+        let b4_1 = (instruction >> 8) & 0xF;
+
+        let imm_u32 = (b12 << 12) | (b11 << 11) | (b10_5 << 5) | (b4_1 << 1);
+        let imm = ((imm_u32 << 19) as i32) >> 19;
+
+        let rs1_value = self.regs[rs1 as usize];
+        let rs2_value = self.regs[rs2 as usize];
+        
+
+        let should_branch = match funct3 {
+            0x0 => rs1_value == rs2_value,
+            0x1 => rs1_value != rs2_value,
+            0x4 => (rs1_value as i32) < (rs2_value as i32),
+            0x5 => (rs1_value as i32) >= (rs2_value as i32),
+            0x6 => rs1_value < rs2_value,
+            0x7 => rs1_value >= rs2_value,
+            _ => panic!("Unknown B-type funct3: {:#x}", funct3),
+        };
+
+        if should_branch {
+            *next_pc = (self.pc as i32).wrapping_add(imm) as u32;
+        }
+
+    }
+
+    
 }

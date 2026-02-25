@@ -15,9 +15,7 @@ I'm currently working through the base integer instructions. All the I-Type arit
 
     [x] R-Type instructions (ADD, SUB, XOR, etc.)
 
-    [ ] Branching logic (BEQ, BNE, etc.)
-
-
+    [x] Branching logic (BEQ, BNE, etc.)
 
 * Phase 2: Memory & Loads
 
@@ -34,6 +32,7 @@ I'm currently working through the base integer instructions. All the I-Type arit
     [ ] Support for loading raw binary files
 
     [ ] Basic CLI for stepping through code
+
 * Phase 4: System Level
 
     [ ] Control & Status Registers (CSRs)

@@ -158,8 +158,6 @@ mod sltiu {
         assert_eq!(cpu.regs[2], 0);
 }
 
-// ---------- XORI ----------
-
 #[test]
 fn test_xori_basic() {
     let mut cpu = RiscvCpu::new();
