@@ -197,31 +197,31 @@ mod sltiu {
         assert_eq!(cpu.regs[2], 0);
     }
 
-#[test]
-fn test_xori_basic() {
-    let mut cpu = RiscvCpu::new();
-    cpu.regs[1] = 0b1010;
+    #[test]
+    fn test_xori_basic() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0b1010;
 
-    // xori x2, x1, 0b0110  => 0b1010 ^ 0b0110 = 0b1100 (12)
-    let instruction = encode_itype_imm(0b0110, 1, 0b100, 2, 0x13);
+        // xori x2, x1, 0b0110  => 0b1010 ^ 0b0110 = 0b1100 (12)
+        let instruction = encode_itype_imm(0b0110, 1, 0b100, 2, 0x13);
 
-    cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction);
 
-    assert_eq!(cpu.regs[2], 0b1100);
-}
+        assert_eq!(cpu.regs[2], 0b1100);
+    }
 
-#[test]
-fn test_xori_not_pseudo() {
-    let mut cpu = RiscvCpu::new();
-    cpu.regs[1] = 0x1234_5678;
+    #[test]
+    fn test_xori_not_pseudo() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0x1234_5678;
 
-    // xori x2, x1, -1  => bitwise NOT
-    let instruction = encode_itype_imm(-1, 1, 0b100, 2, 0x13);
+        // xori x2, x1, -1  => bitwise NOT
+        let instruction = encode_itype_imm(-1, 1, 0b100, 2, 0x13);
 
-    cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction);
 
-    assert_eq!(cpu.regs[2], !0x1234_5678);
-}
+        assert_eq!(cpu.regs[2], !0x1234_5678);
+    }
 }
 
 mod ori {
@@ -411,5 +411,129 @@ mod srai {
         cpu.handle_itype(instruction);
 
         assert_eq!(cpu.regs[2] & 0x8000_0000, 0x8000_0000);
+    }
+}
+
+mod load {
+    use super::*;
+
+    #[test]
+    fn test_lb_positive() {
+        let mut cpu = RiscvCpu::new();
+        cpu.bus[0x100] = 0x42;
+        cpu.regs[1] = 0x100;
+
+        let instruction = encode_itype_imm(0, 1, 0b000, 2, 0x03);
+        cpu.handle_load(instruction);
+
+        assert_eq!(cpu.regs[2], 0x42);
+    }
+
+    #[test]
+    fn test_lb_negative() {
+        let mut cpu = RiscvCpu::new();
+        cpu.bus[0x100] = 0xFE;
+        cpu.regs[1] = 0x100;
+
+        let instruction = encode_itype_imm(0, 1, 0b000, 2, 0x03);
+        cpu.handle_load(instruction);
+
+        assert_eq!(cpu.regs[2], 0xFFFF_FFFE);
+    }
+
+    #[test]
+    fn test_lbu() {
+        let mut cpu = RiscvCpu::new();
+        cpu.bus[0x100] = 0xFE;
+        cpu.regs[1] = 0x100;
+
+        let instruction = encode_itype_imm(0, 1, 0b100, 2, 0x03);
+        cpu.handle_load(instruction);
+
+        assert_eq!(cpu.regs[2], 0x0000_00FE);
+    }
+
+    #[test]
+    fn test_lh_positive() {
+        let mut cpu = RiscvCpu::new();
+        cpu.bus[0x100] = 0x34;
+        cpu.bus[0x101] = 0x12;
+        cpu.regs[1] = 0x100;
+
+        let instruction = encode_itype_imm(0, 1, 0b001, 2, 0x03);
+        cpu.handle_load(instruction);
+
+        assert_eq!(cpu.regs[2], 0x1234);
+    }
+
+    #[test]
+    fn test_lh_negative() {
+        let mut cpu = RiscvCpu::new();
+        cpu.bus[0x100] = 0x34;
+        cpu.bus[0x101] = 0x82;
+        cpu.regs[1] = 0x100;
+
+        let instruction = encode_itype_imm(0, 1, 0b001, 2, 0x03);
+        cpu.handle_load(instruction);
+
+        assert_eq!(cpu.regs[2], 0xFFFF_8234);
+    }
+
+    #[test]
+    fn test_lhu() {
+        let mut cpu = RiscvCpu::new();
+        cpu.bus[0x100] = 0x34;
+        cpu.bus[0x101] = 0x82;
+        cpu.regs[1] = 0x100;
+
+        let instruction = encode_itype_imm(0, 1, 0b101, 2, 0x03);
+        cpu.handle_load(instruction);
+
+        assert_eq!(cpu.regs[2], 0x0000_8234);
+    }
+
+    #[test]
+    fn test_lw() {
+        let mut cpu = RiscvCpu::new();
+        cpu.bus[0x100] = 0x78;
+        cpu.bus[0x101] = 0x56;
+        cpu.bus[0x102] = 0x34;
+        cpu.bus[0x103] = 0x12;
+        cpu.regs[1] = 0x100;
+
+        let instruction = encode_itype_imm(0, 1, 0b010, 2, 0x03);
+        cpu.handle_load(instruction);
+
+        assert_eq!(cpu.regs[2], 0x1234_5678);
+    }
+
+    #[test]
+    fn test_load_with_offset() {
+        let mut cpu = RiscvCpu::new();
+        cpu.bus[0x104] = 0xAA;
+        cpu.bus[0x105] = 0xBB;
+        cpu.bus[0x106] = 0xCC;
+        cpu.bus[0x107] = 0xDD;
+        cpu.regs[1] = 0x100;
+
+        let instruction = encode_itype_imm(4, 1, 0b010, 2, 0x03);
+        cpu.handle_load(instruction);
+
+        assert_eq!(cpu.regs[2], 0xDDCC_BBAA);
+    }
+
+    #[test]
+    fn test_load_with_negative_offset() {
+        let mut cpu = RiscvCpu::new();
+        cpu.bus[0x0FC] = 0x11;
+        cpu.bus[0x0FD] = 0x22;
+        cpu.bus[0x0FE] = 0x33;
+        cpu.bus[0x0FF] = 0x44;
+        cpu.regs[1] = 0x100;
+
+        let instruction = encode_itype_imm(-4, 1, 0b010, 2, 0x03);
+        cpu.handle_load(instruction);
+
+        assert_eq!(cpu.regs[2], 0x4433_2211);
     }
 }

@@ -4,6 +4,13 @@ pub struct RiscvCpu {
     pub bus: Vec<u8>,
 }
 
+#[derive(Copy, Clone)]
+pub enum MemSize {
+    Byte,
+    Half,
+    Word,
+}
+
 impl RiscvCpu {
     pub fn new() -> Self {
         Self {
@@ -25,6 +32,7 @@ impl RiscvCpu {
         match opcode {
             0x33 => self.handle_rtype(instruction),
             0x13 => self.handle_itype(instruction),
+            0x03 => self.handle_load(instruction),
             0x63 => self.handle_btype(instruction, &mut next_pc),
             _ => println!("don't have this yet"),
         }
@@ -44,12 +52,32 @@ impl RiscvCpu {
         }
     }
 
-    pub fn load32(&self, addr: u32) -> u32 {
+    pub fn load(&self, addr: u32, size: MemSize, signed: bool) -> u32 {
+        let raw = self.read_raw(addr, size);
+
+        if !signed {
+            return raw;
+        }
+
+        match size {
+            MemSize::Byte => (raw as i8 as i32) as u32,
+            MemSize::Half => (raw as i16 as i32) as u32,
+            MemSize::Word => raw,
+        }
+    }
+
+    fn read_raw(&self, addr: u32, size: MemSize) -> u32 {
         let a = addr as usize;
-        (self.bus[a] as u32)
-            | ((self.bus[a + 1] as u32) << 8)
-            | ((self.bus[a + 2] as u32) << 16)
-            | ((self.bus[a + 3] as u32) << 24)
+        match size {
+            MemSize::Byte => self.bus[a] as u32,
+            MemSize::Half => (self.bus[a] as u32) | ((self.bus[a + 1] as u32) << 8),
+            MemSize::Word => {
+                (self.bus[a] as u32)
+                    | ((self.bus[a + 1] as u32) << 8)
+                    | ((self.bus[a + 2] as u32) << 16)
+                    | ((self.bus[a + 3] as u32) << 24)
+            }
+        }
     }
 
     pub fn store32(&mut self, addr: u32, value: u32) -> Result<(), String> {
@@ -181,6 +209,26 @@ impl RiscvCpu {
         if rd != 0 {
             self.write_reg(rd, rd_value);
         }
+    }
+
+    pub fn handle_load(&mut self, instruction: u32) {
+        let rd = (instruction >> 7) & 0x1F;
+        let funct3 = (instruction >> 12) & 0x7;
+        let rs = (instruction >> 15) & 0x1F;
+        let imm = (instruction as i32) >> 20;
+        let rs_value = self.regs[rs as usize] as i32;
+        let addr = rs_value.wrapping_add(imm) as u32;
+
+        let rd_value = match funct3 {
+            0x0 => self.load(addr, MemSize::Byte, true),
+            0x1 => self.load(addr, MemSize::Half, true),
+            0x2 => self.load(addr, MemSize::Word, true),
+            0x4 => self.load(addr, MemSize::Byte, false),
+            0x5 => self.load(addr, MemSize::Half, false),
+            _ => panic!("Unknown funct3: {:#x}", funct3),
+        };
+
+        self.write_reg(rd, rd_value);
     }
 
     pub fn handle_btype(&mut self, instruction: u32, next_pc: &mut u32) {
