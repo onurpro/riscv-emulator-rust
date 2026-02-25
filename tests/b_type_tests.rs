@@ -131,6 +131,38 @@ mod blt {
 
         assert_eq!(cpu.pc, 0x108);
     }
+
+    #[test]
+    fn test_blt_not_taken_equal() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 7;
+        cpu.regs[2] = 7;
+        cpu.pc = 0x100;
+
+        // blt x1, x2, 8 (Not taken: 7 < 7 is false, PC = 0x104)
+        let instruction = encode_btype(8, 1, 2, 0b100);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x104);
+    }
+
+    #[test]
+    fn test_blt_not_taken_greater() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 20;
+        cpu.regs[2] = 5;
+        cpu.pc = 0x100;
+
+        // blt x1, x2, 8 (Not taken: 20 < 5 is false, PC = 0x104)
+        let instruction = encode_btype(8, 1, 2, 0b100);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x104);
+    }
 }
 
 mod bge {
@@ -167,6 +199,38 @@ mod bge {
 
         assert_eq!(cpu.pc, 0x0FC);
     }
+
+    #[test]
+    fn test_bge_not_taken() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 3;
+        cpu.regs[2] = 10;
+        cpu.pc = 0x100;
+
+        // bge x1, x2, 8 (Not taken: 3 >= 10 is false, PC = 0x104)
+        let instruction = encode_btype(8, 1, 2, 0b101);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x104);
+    }
+
+    #[test]
+    fn test_bge_signed_negative_not_taken() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = -5i32 as u32;
+        cpu.regs[2] = 1;
+        cpu.pc = 0x100;
+
+        // bge x1, x2, 8 (Not taken: -5 >= 1 is false signed, PC = 0x104)
+        let instruction = encode_btype(8, 1, 2, 0b101);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x104);
+    }
 }
 
 mod bltu {
@@ -196,6 +260,22 @@ mod bltu {
         cpu.pc = 0x100;
 
         // bltu x1, x2, 8 (Not taken: big < 5 is false, PC = 0x104)
+        let instruction = encode_btype(8, 1, 2, 0b110);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x104);
+    }
+
+    #[test]
+    fn test_bltu_equal_not_taken() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xABCD;
+        cpu.regs[2] = 0xABCD; // equal
+        cpu.pc = 0x100;
+
+        // bltu x1, x2, 8 (Not taken: equal is not < unsigned, PC = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b110);
         let mut next_pc = cpu.pc + 4;
         cpu.handle_btype(instruction, &mut next_pc);
@@ -238,5 +318,21 @@ mod bgeu {
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x10C);
+    }
+
+    #[test]
+    fn test_bgeu_not_taken() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 3;
+        cpu.regs[2] = 0xFFFF_FFFF; // large unsigned
+        cpu.pc = 0x100;
+
+        // bgeu x1, x2, 8 (Not taken: 3 >= big is false unsigned, PC = 0x104)
+        let instruction = encode_btype(8, 1, 2, 0b111);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x104);
     }
 }

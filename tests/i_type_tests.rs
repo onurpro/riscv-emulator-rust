@@ -84,6 +84,19 @@ mod addi {
 
         assert_eq!(cpu.regs[0], 0);
     }
+
+    #[test]
+    fn test_addi_overflow_wraps() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xFFFF_FFFF;
+
+        // addi x2, x1, 1  (0xFFFF_FFFF + 1 wraps to 0)
+        let instruction = encode_itype_imm(1, 1, 0b000, 2, 0x13);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0);
+    }
 }
 
 mod slti {
@@ -126,7 +139,20 @@ mod slti {
         cpu.handle_itype(instruction);
 
         assert_eq!(cpu.regs[2], 1);
-    }    
+    }
+
+    #[test]
+    fn test_slti_equal_not_less_than() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 10;
+
+        // slti x2, x1, 10  (10 < 10? false => x2 = 0)
+        let instruction = encode_itype_imm(10, 1, 0b010, 2, 0x13);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0);
+    }
 }
 
 mod sltiu {
@@ -156,7 +182,20 @@ mod sltiu {
         cpu.handle_itype(instruction);
 
         assert_eq!(cpu.regs[2], 0);
-}
+    }
+
+    #[test]
+    fn test_sltiu_equal_not_less_than() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 10;
+
+        // sltiu x2, x1, 10  (10 < 10? false => 0, unsigned)
+        let instruction = encode_itype_imm(10, 1, 0b011, 2, 0x13);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0);
+    }
 
 #[test]
 fn test_xori_basic() {
@@ -213,6 +252,19 @@ mod ori {
 
         assert_eq!(cpu.regs[2], 0xDEAD_BEEF);
     }
+
+    #[test]
+    fn test_ori_all_ones_mask() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0x0000_0000;
+
+        // ori x2, x1, -1 (sign-extended all-ones => result is all-ones)
+        let instruction = encode_itype_imm(-1, 1, 0b110, 2, 0x13);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0xFFFF_FFFF);
+    }
 }
 
 mod andi {
@@ -242,6 +294,19 @@ mod andi {
         cpu.handle_itype(instruction);
 
         assert_eq!(cpu.regs[2], 0xFF);
+    }
+
+    #[test]
+    fn test_andi_zero_imm_clears_all() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xDEAD_BEEF;
+
+        // andi x2, x1, 0 => 0 & anything = 0
+        let instruction = encode_itype_imm(0, 1, 0b111, 2, 0x13);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0);
     }
 }
 

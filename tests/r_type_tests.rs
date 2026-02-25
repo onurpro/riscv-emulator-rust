@@ -87,6 +87,19 @@ mod add_sub {
     }
 
     #[test]
+    fn test_sub_underflow_wraps() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0;
+        cpu.regs[2] = 1;
+
+        // sub x3, x1, x2  (0 - 1 wraps to 0xFFFF_FFFF)
+        let inst = encode_rtype(0b0100000, 2, 1, 0b000, 3, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[3], 0xFFFF_FFFF);
+    }
+
+    #[test]
     fn test_add_does_not_write_x0() {
         let mut cpu = RiscvCpu::new();
         cpu.regs[1] = 123;
@@ -245,6 +258,32 @@ mod slt_sltu {
 
         // sltu x3, x1, x2  (equal => 0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b011, 3, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[3], 0);
+    }
+
+    #[test]
+    fn test_sltu_greater_than() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xFFFF_FFFF;
+        cpu.regs[2] = 1;
+
+        // sltu x3, x1, x2  (0xFFFF_FFFF < 1? false => 0)
+        let inst = encode_rtype(0b0000000, 2, 1, 0b011, 3, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[3], 0);
+    }
+
+    #[test]
+    fn test_slt_equal_values() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 42;
+        cpu.regs[2] = 42;
+
+        // slt x3, x1, x2  (42 < 42? false => 0)
+        let inst = encode_rtype(0b0000000, 2, 1, 0b010, 3, 0x33);
         cpu.handle_rtype(inst);
 
         assert_eq!(cpu.regs[3], 0);
@@ -413,6 +452,34 @@ mod srl_sra {
         cpu.handle_rtype(inst);
 
         assert_eq!(cpu.regs[3], cpu.regs[1]);
+    }
+
+    #[test]
+    fn test_sra_positive_value() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0x0000_0040; // 64
+        cpu.regs[2] = 2;
+
+        // sra x3, x1, x2  (64 >> 2 = 16, positive: behaves same as SRL)
+        let inst = encode_rtype(0b0100000, 2, 1, 0b101, 3, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[3], 16);
+        // High bit must not be set for a positive input
+        assert_eq!(cpu.regs[3] & 0x8000_0000, 0);
+    }
+
+    #[test]
+    fn test_srl_all_ones_zero_fill() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xFFFF_FFFF;
+        cpu.regs[2] = 4;
+
+        // srl x3, x1, x2  (0xFFFF_FFFF >> 4 = 0x0FFF_FFFF, zero-fill)
+        let inst = encode_rtype(0b0000000, 2, 1, 0b101, 3, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[3], 0x0FFF_FFFF);
     }
 }
 

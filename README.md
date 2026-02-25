@@ -3,11 +3,11 @@ Building a 32-bit RISC-V (RV32I) emulator from scratch to learn Rust. I'm curren
 
 The goal is to go from basic instruction decoding to eventually booting a minimal kernel or some compiled C code.
 
-# Current Progress: Phase 1
-I'm currently working through the base integer instructions. All the I-Type arithmetic and logic instructions and R-Type are implemented and verified with unit tests.
+# Current Progress: Phase 2
+All base integer instructions (R-Type, I-Type, B-Type) are now implemented and verified with unit tests. I'm moving on to memory management and Load/Store instructions to handle data movement.
 
 ## The Roadmap
-* Phase 1: The Core (In Progress)
+* Phase 1: The Core (Done)
 
     [x] I-Type decoding (ADDI, SLTI, etc.)
 
@@ -17,7 +17,7 @@ I'm currently working through the base integer instructions. All the I-Type arit
 
     [x] Branching logic (BEQ, BNE, etc.)
 
-* Phase 2: Memory & Loads
+* Phase 2: Memory & Loads (In Progress)
 
     [ ] Setup a proper memory bus (Vec<u8>)
 
