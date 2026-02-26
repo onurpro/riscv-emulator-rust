@@ -40,18 +40,6 @@ impl RiscvCpu {
         self.pc = next_pc;
     }
 
-    fn fetch(&self) -> u32 {
-        let addr = self.pc as usize;
-        let bytes = &self.bus[addr..addr + 4];
-        u32::from_le_bytes(bytes.try_into().unwrap())
-    }
-
-    fn write_reg(&mut self, reg: u32, value: u32) {
-        if reg != 0 {
-            self.regs[reg as usize] = value;
-        }
-    }
-
     pub fn load(&self, addr: u32, size: MemSize, signed: bool) -> u32 {
         let raw = self.read_raw(addr, size);
 
@@ -66,30 +54,22 @@ impl RiscvCpu {
         }
     }
 
-    fn read_raw(&self, addr: u32, size: MemSize) -> u32 {
+    pub fn store(&mut self, addr: u32, size: MemSize, value: u32) {
         let a = addr as usize;
+
         match size {
-            MemSize::Byte => self.bus[a] as u32,
-            MemSize::Half => (self.bus[a] as u32) | ((self.bus[a + 1] as u32) << 8),
+            MemSize::Byte => self.bus[a] = (value & 0xFF) as u8,
+            MemSize::Half => {
+                self.bus[a] = (value & 0xFF) as u8;
+                self.bus[a + 1] = ((value >> 8) & 0xFF) as u8;
+            }
             MemSize::Word => {
-                (self.bus[a] as u32)
-                    | ((self.bus[a + 1] as u32) << 8)
-                    | ((self.bus[a + 2] as u32) << 16)
-                    | ((self.bus[a + 3] as u32) << 24)
+                self.bus[a] = (value & 0xFF) as u8;
+                self.bus[a + 1] = ((value >> 8) & 0xFF) as u8;
+                self.bus[a + 2] = ((value >> 16) & 0xFF) as u8;
+                self.bus[a + 3] = ((value >> 24) & 0xFF) as u8;
             }
         }
-    }
-
-    pub fn store32(&mut self, addr: u32, value: u32) -> Result<(), String> {
-        let a = addr as usize;
-        if a + 3 >= self.bus.len() {
-            return Err(format!("Access Fault at {:#x}", addr));
-        }
-        self.bus[a] = (value & 0xFF) as u8;
-        self.bus[a + 1] = ((value >> 8) & 0xFF) as u8;
-        self.bus[a + 2] = ((value >> 16) & 0xFF) as u8;
-        self.bus[a + 3] = ((value >> 24) & 0xFF) as u8;
-        Ok(())
     }
 
     pub fn handle_rtype(&mut self, instruction: u32) {
@@ -189,16 +169,16 @@ impl RiscvCpu {
             }
             0x2 => {
                 if (rs_value as i32) < imm {
-                    1 as u32
+                    1_u32
                 } else {
-                    0 as u32
+                    0_u32
                 }
             }
             0x3 => {
                 if rs_value < (imm as u32) {
-                    1 as u32
+                    1_u32
                 } else {
-                    0 as u32
+                    0_u32
                 }
             }
             _ => {
@@ -259,6 +239,32 @@ impl RiscvCpu {
 
         if should_branch {
             *next_pc = (self.pc as i32).wrapping_add(imm) as u32;
+        }
+    }
+
+    fn fetch(&self) -> u32 {
+        let addr = self.pc as usize;
+        let bytes = &self.bus[addr..addr + 4];
+        u32::from_le_bytes(bytes.try_into().unwrap())
+    }
+
+    fn write_reg(&mut self, reg: u32, value: u32) {
+        if reg != 0 {
+            self.regs[reg as usize] = value;
+        }
+    }
+
+    fn read_raw(&self, addr: u32, size: MemSize) -> u32 {
+        let a = addr as usize;
+        match size {
+            MemSize::Byte => self.bus[a] as u32,
+            MemSize::Half => (self.bus[a] as u32) | ((self.bus[a + 1] as u32) << 8),
+            MemSize::Word => {
+                (self.bus[a] as u32)
+                    | ((self.bus[a + 1] as u32) << 8)
+                    | ((self.bus[a + 2] as u32) << 16)
+                    | ((self.bus[a + 3] as u32) << 24)
+            }
         }
     }
 }
