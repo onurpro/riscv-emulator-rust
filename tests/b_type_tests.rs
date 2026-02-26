@@ -59,6 +59,36 @@ mod beq {
 
         assert_eq!(cpu.pc, 0x104);
     }
+
+    #[test]
+    fn test_beq_backward_branch_taken() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 42;
+        cpu.regs[2] = 42;
+        cpu.pc = 0x100;
+
+        // beq x1, x2, -8  (Taken: equal, PC = 0x100 + (-8) = 0x0F8)
+        let instruction = encode_btype(-8, 1, 2, 0b000);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x0F8);
+    }
+
+    #[test]
+    fn test_beq_x0_vs_x0_always_taken() {
+        let mut cpu = RiscvCpu::new();
+        // x0 == x0 always -> BEQ always taken
+        cpu.pc = 0x100;
+
+        let instruction = encode_btype(8, 0, 0, 0b000);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x108);
+    }
 }
 
 mod bne {
@@ -94,6 +124,38 @@ mod bne {
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
+    }
+
+    #[test]
+    fn test_bne_backward_branch_taken() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 7;
+        cpu.regs[2] = 3;
+        cpu.pc = 0x100;
+
+        // bne x1, x2, -8  (Taken: 7 != 3, PC = 0x0F8)
+        let instruction = encode_btype(-8, 1, 2, 0b001);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x0F8);
+    }
+
+    #[test]
+    fn test_bne_signed_values_differ() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = -1i32 as u32; // 0xFFFF_FFFF
+        cpu.regs[2] = 1;
+        cpu.pc = 0x100;
+
+        // bne x1, x2, 8  (Taken: -1 != 1)
+        let instruction = encode_btype(8, 1, 2, 0b001);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x108);
     }
 }
 
@@ -162,6 +224,22 @@ mod blt {
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
+    }
+
+    #[test]
+    fn test_blt_backward_branch_taken() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = -5i32 as u32;
+        cpu.regs[2] = 0;
+        cpu.pc = 0x100;
+
+        // blt x1, x2, -8  (Taken: -5 < 0 signed, PC = 0x0F8)
+        let instruction = encode_btype(-8, 1, 2, 0b100);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x0F8);
     }
 }
 
@@ -283,6 +361,22 @@ mod bltu {
 
         assert_eq!(cpu.pc, 0x104);
     }
+
+    #[test]
+    fn test_bltu_backward_branch_taken() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0;
+        cpu.regs[2] = 0xFFFF_FFFF; // large unsigned
+        cpu.pc = 0x100;
+
+        // bltu x1, x2, -8  (Taken: 0 < 0xFFFF_FFFF unsigned, PC = 0x0F8)
+        let instruction = encode_btype(-8, 1, 2, 0b110);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x0F8);
+    }
 }
 
 mod bgeu {
@@ -334,5 +428,38 @@ mod bgeu {
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
+    }
+
+    #[test]
+    fn test_bgeu_backward_branch_taken() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xFFFF_FFFF;
+        cpu.regs[2] = 0xFFFF_FFFF; // equal -> taken
+        cpu.pc = 0x100;
+
+        // bgeu x1, x2, -8  (Taken: equal, PC = 0x0F8)
+        let instruction = encode_btype(-8, 1, 2, 0b111);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x0F8);
+    }
+
+    #[test]
+    fn test_bgeu_signed_as_large_unsigned_taken() {
+        let mut cpu = RiscvCpu::new();
+        // -1 as u32 = 0xFFFF_FFFF which is MAX unsigned
+        cpu.regs[1] = -1i32 as u32;
+        cpu.regs[2] = 1;
+        cpu.pc = 0x100;
+
+        // bgeu x1, x2, 8  (Taken: 0xFFFF_FFFF >= 1 unsigned)
+        let instruction = encode_btype(8, 1, 2, 0b111);
+        let mut next_pc = cpu.pc + 4;
+        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.pc = next_pc;
+
+        assert_eq!(cpu.pc, 0x108);
     }
 }

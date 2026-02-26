@@ -33,6 +33,7 @@ impl RiscvCpu {
             0x33 => self.handle_rtype(instruction),
             0x13 => self.handle_itype(instruction),
             0x03 => self.handle_load(instruction),
+            0x23 => self.handle_store(instruction),
             0x63 => self.handle_btype(instruction, &mut next_pc),
             _ => println!("don't have this yet"),
         }
@@ -209,6 +210,31 @@ impl RiscvCpu {
         };
 
         self.write_reg(rd, rd_value);
+    }
+
+    pub fn handle_store(&mut self, instruction: u32) {
+        let funct3 = (instruction >> 12) & 0x7;
+        let rs1 = (instruction >> 15) & 0x1F;
+        let rs2 = (instruction >> 20) & 0x1F;
+
+        let b4_0 = (instruction >> 7) & 0x1F;
+        let b11_5 = (instruction >> 25) & 0x7F;
+
+        let imm_u: u32 = (b11_5 << 5) | b4_0;
+        let imm = ((imm_u << 20) as i32) >> 20;
+
+        let rs1_value = self.regs[rs1 as usize];
+        let rs2_value = self.regs[rs2 as usize];
+
+        let addr = (rs1_value as i32).wrapping_add(imm) as u32;
+
+        match funct3 {
+            0x0 => self.store(addr, MemSize::Byte, rs2_value),
+            0x1 => self.store(addr, MemSize::Half, rs2_value),
+            0x2 => self.store(addr, MemSize::Word, rs2_value),
+            _ => panic!("Unknown S-type funct3: {:#x}", funct3),
+        }
+
     }
 
     pub fn handle_btype(&mut self, instruction: u32, next_pc: &mut u32) {

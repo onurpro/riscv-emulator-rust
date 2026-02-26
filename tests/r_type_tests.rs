@@ -124,6 +124,32 @@ mod add_sub {
 
         assert_eq!(cpu.regs[0], 0);
     }
+
+    #[test]
+    fn test_add_same_register_rs1_rs2_rd() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 5;
+
+        // add x1, x1, x1  (x1 = 5 + 5 = 10, all three regs are the same)
+        let inst = encode_rtype(0b0000000, 1, 1, 0b000, 1, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[1], 10);
+    }
+
+    #[test]
+    fn test_add_result_into_source_register() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 3;
+        cpu.regs[2] = 7;
+
+        // add x1, x1, x2  (rd == rs1, x1 = 3 + 7 = 10)
+        let inst = encode_rtype(0b0000000, 2, 1, 0b000, 1, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[1], 10);
+        assert_eq!(cpu.regs[2], 7, "rs2 must be unchanged");
+    }
 }
 
 mod sll {
@@ -369,6 +395,45 @@ mod xor_or_and {
         cpu.handle_rtype(inst);
 
         assert_eq!(cpu.regs[3], 0);
+    }
+
+    #[test]
+    fn test_xor_all_ones() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xFFFF_FFFF;
+        cpu.regs[2] = 0x0000_0000;
+
+        // xor x3, x1, x2  (0xFFFF_FFFF ^ 0 = 0xFFFF_FFFF)
+        let inst = encode_rtype(0b0000000, 2, 1, 0b100, 3, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[3], 0xFFFF_FFFF);
+    }
+
+    #[test]
+    fn test_or_all_ones_absorbs() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xFFFF_FFFF;
+        cpu.regs[2] = 0x1234_5678;
+
+        // or x3, x1, x2  (all-ones | anything = all-ones)
+        let inst = encode_rtype(0b0000000, 2, 1, 0b110, 3, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[3], 0xFFFF_FFFF);
+    }
+
+    #[test]
+    fn test_and_all_ones_identity() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xFFFF_FFFF;
+        cpu.regs[2] = 0xFFFF_FFFF;
+
+        // and x3, x1, x2  (all-ones & all-ones = all-ones)
+        let inst = encode_rtype(0b0000000, 2, 1, 0b111, 3, 0x33);
+        cpu.handle_rtype(inst);
+
+        assert_eq!(cpu.regs[3], 0xFFFF_FFFF);
     }
 }
 

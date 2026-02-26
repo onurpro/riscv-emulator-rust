@@ -338,6 +338,32 @@ mod slli {
 
         assert_eq!(cpu.regs[2], 0x1234_5678);
     }
+
+    #[test]
+    fn test_slli_max_shift_31() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 1;
+
+        // slli x2, x1, 31  => 1 << 31 = 0x8000_0000
+        let instruction = encode_shift_itype(31, 1, 2, 0b001, false);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0x8000_0000);
+    }
+
+    #[test]
+    fn test_slli_all_ones_shift_1() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xFFFF_FFFF;
+
+        // slli x2, x1, 1  => 0xFFFF_FFFF << 1 = 0xFFFF_FFFE (low bit drops)
+        let instruction = encode_shift_itype(1, 1, 2, 0b001, false);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0xFFFF_FFFE);
+    }
 }
 
 mod srli {
@@ -367,6 +393,32 @@ mod srli {
         cpu.handle_itype(instruction);
 
         assert_eq!(cpu.regs[2], 0x4000_0000);
+    }
+
+    #[test]
+    fn test_srli_max_shift_31() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0x8000_0000; // only MSB set
+
+        // srli x2, x1, 31  => 0x8000_0000 >> 31 = 1 (logical zero-fill)
+        let instruction = encode_shift_itype(31, 1, 2, 0b101, false);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 1);
+    }
+
+    #[test]
+    fn test_srli_all_ones_shift_4() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xFFFF_FFFF;
+
+        // srli x2, x1, 4  => 0x0FFF_FFFF
+        let instruction = encode_shift_itype(4, 1, 2, 0b101, false);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0x0FFF_FFFF);
     }
 }
 
@@ -411,6 +463,45 @@ mod srai {
         cpu.handle_itype(instruction);
 
         assert_eq!(cpu.regs[2] & 0x8000_0000, 0x8000_0000);
+    }
+
+    #[test]
+    fn test_srai_zero_shamt_identity() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0xDEAD_BEEF;
+
+        // srai x2, x1, 0  => no shift, value unchanged
+        let instruction = encode_shift_itype(0, 1, 2, 0b101, true);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0xDEAD_BEEF);
+    }
+
+    #[test]
+    fn test_srai_max_shift_31_negative() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0x8000_0000; // most negative value
+
+        // srai x2, x1, 31  => all sign bits => 0xFFFF_FFFF (-1)
+        let instruction = encode_shift_itype(31, 1, 2, 0b101, true);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0xFFFF_FFFF);
+    }
+
+    #[test]
+    fn test_srai_max_shift_31_positive() {
+        let mut cpu = RiscvCpu::new();
+        cpu.regs[1] = 0x7FFF_FFFF; // max positive
+
+        // srai x2, x1, 31  => all zeros (sign bit is 0)
+        let instruction = encode_shift_itype(31, 1, 2, 0b101, true);
+
+        cpu.handle_itype(instruction);
+
+        assert_eq!(cpu.regs[2], 0);
     }
 }
 

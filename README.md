@@ -21,7 +21,7 @@ All base integer instructions (R-Type, I-Type, B-Type) are now implemented and v
 
     [x] Setup a proper memory bus (Vec<u8>)
 
-    [ ] Load/Store instructions (LW, SW, LB, SB)
+    [x] Load/Store instructions (LW, SW, LB, SB)
 
     [x] Handle sign-extension for sub-word loads
 
