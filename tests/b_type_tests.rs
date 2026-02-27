@@ -38,7 +38,7 @@ mod beq {
         // beq x1, x2, 8 (PC = 0x100 + 8 = 0x108)
         let instruction = encode_btype(8, 1, 2, 0b000);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);
@@ -54,7 +54,7 @@ mod beq {
         // beq x1, x2, 8 (Not taken, PC = 0x100 + 4 = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b000);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
@@ -70,7 +70,7 @@ mod beq {
         // beq x1, x2, -8  (Taken: equal, PC = 0x100 + (-8) = 0x0F8)
         let instruction = encode_btype(-8, 1, 2, 0b000);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x0F8);
@@ -84,7 +84,7 @@ mod beq {
 
         let instruction = encode_btype(8, 0, 0, 0b000);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);
@@ -104,7 +104,7 @@ mod bne {
         // bne x1, x2, 8 (Taken, PC = 0x108)
         let instruction = encode_btype(8, 1, 2, 0b001);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);
@@ -120,7 +120,7 @@ mod bne {
         // bne x1, x2, 8 (Not taken, PC = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b001);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
@@ -136,7 +136,7 @@ mod bne {
         // bne x1, x2, -8  (Taken: 7 != 3, PC = 0x0F8)
         let instruction = encode_btype(-8, 1, 2, 0b001);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x0F8);
@@ -152,7 +152,7 @@ mod bne {
         // bne x1, x2, 8  (Taken: -1 != 1)
         let instruction = encode_btype(8, 1, 2, 0b001);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);
@@ -172,7 +172,7 @@ mod blt {
         // blt x1, x2, 8 (Taken: 5 < 10, PC = 0x108)
         let instruction = encode_btype(8, 1, 2, 0b100);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);
@@ -188,7 +188,7 @@ mod blt {
         // blt x1, x2, 8 (Taken: -10 < 5, PC = 0x108)
         let instruction = encode_btype(8, 1, 2, 0b100);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);
@@ -204,7 +204,7 @@ mod blt {
         // blt x1, x2, 8 (Not taken: 7 < 7 is false, PC = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b100);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
@@ -220,7 +220,7 @@ mod blt {
         // blt x1, x2, 8 (Not taken: 20 < 5 is false, PC = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b100);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
@@ -236,7 +236,7 @@ mod blt {
         // blt x1, x2, -8  (Taken: -5 < 0 signed, PC = 0x0F8)
         let instruction = encode_btype(-8, 1, 2, 0b100);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x0F8);
@@ -256,7 +256,7 @@ mod bge {
         // bge x1, x2, 8 (Taken: 10 >= 5, PC = 0x108)
         let instruction = encode_btype(8, 1, 2, 0b101);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);
@@ -272,7 +272,7 @@ mod bge {
         // bge x1, x2, -4 (Taken: 10 >= 10, PC = 0x0FC)
         let instruction = encode_btype(-4, 1, 2, 0b101);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x0FC);
@@ -288,7 +288,7 @@ mod bge {
         // bge x1, x2, 8 (Not taken: 3 >= 10 is false, PC = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b101);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
@@ -304,7 +304,7 @@ mod bge {
         // bge x1, x2, 8 (Not taken: -5 >= 1 is false signed, PC = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b101);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
@@ -324,7 +324,7 @@ mod bltu {
         // bltu x1, x2, 8 (Taken: 5 < big, PC = 0x108)
         let instruction = encode_btype(8, 1, 2, 0b110);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);
@@ -340,7 +340,7 @@ mod bltu {
         // bltu x1, x2, 8 (Not taken: big < 5 is false, PC = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b110);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
@@ -356,7 +356,7 @@ mod bltu {
         // bltu x1, x2, 8 (Not taken: equal is not < unsigned, PC = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b110);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
@@ -372,7 +372,7 @@ mod bltu {
         // bltu x1, x2, -8  (Taken: 0 < 0xFFFF_FFFF unsigned, PC = 0x0F8)
         let instruction = encode_btype(-8, 1, 2, 0b110);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x0F8);
@@ -392,7 +392,7 @@ mod bgeu {
         // bgeu x1, x2, 8 (Taken: big >= 5, PC = 0x108)
         let instruction = encode_btype(8, 1, 2, 0b111);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);
@@ -408,7 +408,7 @@ mod bgeu {
         // bgeu x1, x2, 12 (Taken: 0xABC >= 0xABC, PC = 0x10C)
         let instruction = encode_btype(12, 1, 2, 0b111);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x10C);
@@ -424,7 +424,7 @@ mod bgeu {
         // bgeu x1, x2, 8 (Not taken: 3 >= big is false unsigned, PC = 0x104)
         let instruction = encode_btype(8, 1, 2, 0b111);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x104);
@@ -440,7 +440,7 @@ mod bgeu {
         // bgeu x1, x2, -8  (Taken: equal, PC = 0x0F8)
         let instruction = encode_btype(-8, 1, 2, 0b111);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x0F8);
@@ -457,7 +457,7 @@ mod bgeu {
         // bgeu x1, x2, 8  (Taken: 0xFFFF_FFFF >= 1 unsigned)
         let instruction = encode_btype(8, 1, 2, 0b111);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_btype(instruction, &mut next_pc);
+        cpu.handle_btype(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.pc, 0x108);

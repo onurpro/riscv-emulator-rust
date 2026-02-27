@@ -7,6 +7,6 @@ fn main() {
     let bytes = test_instr.to_le_bytes();
     cpu.bus[0..4].copy_from_slice(&bytes);
 
-    cpu.step();
-    // cpu.step();
+    cpu.step().unwrap();
+    // cpu.step().unwrap();
 }

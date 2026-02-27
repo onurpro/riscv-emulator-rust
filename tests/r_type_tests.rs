@@ -28,7 +28,7 @@ mod add_sub {
 
         // add x3, x1, x2  (x3 = 10 + 5 = 15)
         let inst = encode_rtype(0b0000000, 2, 1, 0b000, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 15);
         assert_eq!(cpu.regs[0], 0);
@@ -42,7 +42,7 @@ mod add_sub {
 
         // add x3, x1, x2  (x3 = -10 + 3 = -7)
         let inst = encode_rtype(0b0000000, 2, 1, 0b000, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3] as i32, -7);
     }
@@ -55,7 +55,7 @@ mod add_sub {
 
         // add x3, x1, x2  (x3 = 0xFFFF_FFFF + 1 = 0 (wrap))
         let inst = encode_rtype(0b0000000, 2, 1, 0b000, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0);
     }
@@ -68,7 +68,7 @@ mod add_sub {
 
         // sub x3, x1, x2  (x3 = 10 - 5 = 5)
         let inst = encode_rtype(0b0100000, 2, 1, 0b000, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 5);
     }
@@ -81,7 +81,7 @@ mod add_sub {
 
         // sub x3, x1, x2  (x3 = 5 - 10 = -5)
         let inst = encode_rtype(0b0100000, 2, 1, 0b000, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3] as i32, -5);
     }
@@ -94,7 +94,7 @@ mod add_sub {
 
         // sub x3, x1, x2  (0 - 1 wraps to 0xFFFF_FFFF)
         let inst = encode_rtype(0b0100000, 2, 1, 0b000, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0xFFFF_FFFF);
     }
@@ -107,7 +107,7 @@ mod add_sub {
 
         // add x0, x1, x2  (must not modify x0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b000, 0, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[0], 0);
     }
@@ -120,7 +120,7 @@ mod add_sub {
 
         // sub x0, x1, x2  (must not modify x0)
         let inst = encode_rtype(0b0100000, 2, 1, 0b000, 0, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[0], 0);
     }
@@ -132,7 +132,7 @@ mod add_sub {
 
         // add x1, x1, x1  (x1 = 5 + 5 = 10, all three regs are the same)
         let inst = encode_rtype(0b0000000, 1, 1, 0b000, 1, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[1], 10);
     }
@@ -145,7 +145,7 @@ mod add_sub {
 
         // add x1, x1, x2  (rd == rs1, x1 = 3 + 7 = 10)
         let inst = encode_rtype(0b0000000, 2, 1, 0b000, 1, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[1], 10);
         assert_eq!(cpu.regs[2], 7, "rs2 must be unchanged");
@@ -163,7 +163,7 @@ mod sll {
 
         // sll x3, x1, x2  (x3 = 1 << 3 = 8)
         let inst = encode_rtype(0b0000000, 2, 1, 0b001, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 8);
     }
@@ -176,7 +176,7 @@ mod sll {
 
         // sll x3, x1, x2  (x3 = 1 << (0) = 1)
         let inst = encode_rtype(0b0000000, 2, 1, 0b001, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 1);
     }
@@ -189,7 +189,7 @@ mod sll {
 
         // sll x3, x1, x2  (x3 = 1 << 31)
         let inst = encode_rtype(0b0000000, 2, 1, 0b001, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 1u32 << 31);
     }
@@ -202,7 +202,7 @@ mod sll {
 
         // sll x3, x1, x2  (0 << anything = 0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b001, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0);
     }
@@ -219,7 +219,7 @@ mod slt_sltu {
 
         // slt x3, x1, x2  (5 < 10 => 1)
         let inst = encode_rtype(0b0000000, 2, 1, 0b010, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 1);
     }
@@ -232,7 +232,7 @@ mod slt_sltu {
 
         // slt x3, x1, x2  (10 < 10 => 0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b010, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0);
     }
@@ -245,7 +245,7 @@ mod slt_sltu {
 
         // slt x3, x1, x2  (-1 < 1 => 1)
         let inst = encode_rtype(0b0000000, 2, 1, 0b010, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 1);
     }
@@ -258,7 +258,7 @@ mod slt_sltu {
 
         // sltu x3, x1, x2  (1 < 0xFFFF_FFFF unsigned => 1)
         let inst = encode_rtype(0b0000000, 2, 1, 0b011, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 1);
     }
@@ -271,7 +271,7 @@ mod slt_sltu {
 
         // sltu x3, x1, x2  (0 < 123 => 1)
         let inst = encode_rtype(0b0000000, 2, 1, 0b011, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 1);
     }
@@ -284,7 +284,7 @@ mod slt_sltu {
 
         // sltu x3, x1, x2  (equal => 0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b011, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0);
     }
@@ -297,7 +297,7 @@ mod slt_sltu {
 
         // sltu x3, x1, x2  (0xFFFF_FFFF < 1? false => 0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b011, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0);
     }
@@ -310,7 +310,7 @@ mod slt_sltu {
 
         // slt x3, x1, x2  (42 < 42? false => 0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b010, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0);
     }
@@ -327,7 +327,7 @@ mod xor_or_and {
 
         // xor x3, x1, x2  (1010 ^ 0110 = 1100)
         let inst = encode_rtype(0b0000000, 2, 1, 0b100, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0b1100);
     }
@@ -340,7 +340,7 @@ mod xor_or_and {
 
         // xor x3, x1, x2  (x ^ x = 0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b100, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0);
     }
@@ -353,7 +353,7 @@ mod xor_or_and {
 
         // or x3, x1, x2  (1010 | 0110 = 1110)
         let inst = encode_rtype(0b0000000, 2, 1, 0b110, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0b1110);
     }
@@ -366,7 +366,7 @@ mod xor_or_and {
 
         // or x3, x1, x2  (0 | x2 = x2)
         let inst = encode_rtype(0b0000000, 2, 1, 0b110, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0x1234_5678);
     }
@@ -379,7 +379,7 @@ mod xor_or_and {
 
         // and x3, x1, x2  (1010 & 0110 = 0010)
         let inst = encode_rtype(0b0000000, 2, 1, 0b111, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0b0010);
     }
@@ -392,7 +392,7 @@ mod xor_or_and {
 
         // and x3, x1, x2  (x & 0 = 0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b111, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0);
     }
@@ -405,7 +405,7 @@ mod xor_or_and {
 
         // xor x3, x1, x2  (0xFFFF_FFFF ^ 0 = 0xFFFF_FFFF)
         let inst = encode_rtype(0b0000000, 2, 1, 0b100, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0xFFFF_FFFF);
     }
@@ -418,7 +418,7 @@ mod xor_or_and {
 
         // or x3, x1, x2  (all-ones | anything = all-ones)
         let inst = encode_rtype(0b0000000, 2, 1, 0b110, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0xFFFF_FFFF);
     }
@@ -431,7 +431,7 @@ mod xor_or_and {
 
         // and x3, x1, x2  (all-ones & all-ones = all-ones)
         let inst = encode_rtype(0b0000000, 2, 1, 0b111, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0xFFFF_FFFF);
     }
@@ -448,7 +448,7 @@ mod srl_sra {
 
         // srl x3, x1, x2  (1000 >> 3 = 1)
         let inst = encode_rtype(0b0000000, 2, 1, 0b101, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 1);
     }
@@ -461,7 +461,7 @@ mod srl_sra {
 
         // srl x3, x1, x2  (logical shift, result = 1)
         let inst = encode_rtype(0b0000000, 2, 1, 0b101, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 1);
     }
@@ -474,7 +474,7 @@ mod srl_sra {
 
         // srl x3, x1, x2  (shift by 0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b101, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0xF000_0000);
     }
@@ -487,7 +487,7 @@ mod srl_sra {
 
         // sra x3, x1, x2  (arithmetic shift, preserve sign)
         let inst = encode_rtype(0b0100000, 2, 1, 0b101, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         // -8 >> 1 = -4
         assert_eq!(cpu.regs[3] as i32, -4);
@@ -501,7 +501,7 @@ mod srl_sra {
 
         // sra x3, x1, x2  (-1 >> 31 = -1 for arithmetic shift)
         let inst = encode_rtype(0b0100000, 2, 1, 0b101, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3] as i32, -1);
     }
@@ -514,7 +514,7 @@ mod srl_sra {
 
         // sra x3, x1, x2  (shift by 0)
         let inst = encode_rtype(0b0100000, 2, 1, 0b101, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], cpu.regs[1]);
     }
@@ -527,7 +527,7 @@ mod srl_sra {
 
         // sra x3, x1, x2  (64 >> 2 = 16, positive: behaves same as SRL)
         let inst = encode_rtype(0b0100000, 2, 1, 0b101, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 16);
         // High bit must not be set for a positive input
@@ -542,7 +542,7 @@ mod srl_sra {
 
         // srl x3, x1, x2  (0xFFFF_FFFF >> 4 = 0x0FFF_FFFF, zero-fill)
         let inst = encode_rtype(0b0000000, 2, 1, 0b101, 3, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[3], 0x0FFF_FFFF);
     }
@@ -559,7 +559,7 @@ mod x0_behavior {
 
         // add x2, x0, x1  (x2 = 0 + 123)
         let inst = encode_rtype(0b0000000, 1, 0, 0b000, 2, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[2], 123);
         assert_eq!(cpu.regs[0], 0);
@@ -573,7 +573,7 @@ mod x0_behavior {
 
         // and x0, x1, x2  (should not change x0)
         let inst = encode_rtype(0b0000000, 2, 1, 0b111, 0, 0x33);
-        cpu.handle_rtype(inst);
+        cpu.handle_rtype(inst).unwrap();
 
         assert_eq!(cpu.regs[0], 0);
     }

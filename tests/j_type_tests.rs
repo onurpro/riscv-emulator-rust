@@ -56,7 +56,7 @@ mod jal {
         // jal x1, +8  →  rd = PC+4 = 0x104, next_pc = 0x100 + 8 = 0x108
         let instruction = encode_jal(8, 1);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jal(instruction, &mut next_pc);
+        cpu.handle_jal(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[1], 0x104, "x1 (return address) should be old PC+4");
@@ -71,7 +71,7 @@ mod jal {
         // jal x1, -8  →  rd = 0x104, next_pc = 0x100 + (-8) = 0x0F8
         let instruction = encode_jal(-8, 1);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jal(instruction, &mut next_pc);
+        cpu.handle_jal(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[1], 0x104, "x1 should be old PC+4");
@@ -86,7 +86,7 @@ mod jal {
         // jal x2, +0x100  →  rd = 0x4, next_pc = 0x100
         let instruction = encode_jal(0x100, 2);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jal(instruction, &mut next_pc);
+        cpu.handle_jal(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[2], 0x4, "x2 should be 0x4 (return address)");
@@ -101,7 +101,7 @@ mod jal {
         // jal x0, +4  →  x0 must remain 0 (write to x0 is a no-op)
         let instruction = encode_jal(4, 0);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jal(instruction, &mut next_pc);
+        cpu.handle_jal(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[0], 0, "x0 must always be 0");
@@ -117,7 +117,7 @@ mod jal {
         let instruction = encode_jal(16, 5);
         let old_pc = cpu.pc;
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jal(instruction, &mut next_pc);
+        cpu.handle_jal(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[5], old_pc + 4, "return address is always PC+4");
@@ -131,7 +131,7 @@ mod jal {
         // jal x3, +20  →  rd = 4, next_pc = 20
         let instruction = encode_jal(20, 3);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jal(instruction, &mut next_pc);
+        cpu.handle_jal(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[3], 4, "x3 = return address = 4");
@@ -153,7 +153,7 @@ mod jalr {
         // jalr x2, x1, 0  →  rd = 0x104, next_pc = 0x200 + 0 = 0x200
         let instruction = encode_jalr(0, 1, 2);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jalr(instruction, &mut next_pc);
+        cpu.handle_jalr(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[2], 0x104, "x2 (return address) should be old PC+4");
@@ -169,7 +169,7 @@ mod jalr {
         // jalr x2, x1, 8  →  rd = 0x104, next_pc = 0x200 + 8 = 0x208
         let instruction = encode_jalr(8, 1, 2);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jalr(instruction, &mut next_pc);
+        cpu.handle_jalr(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[2], 0x104, "return address must be 0x104");
@@ -185,7 +185,7 @@ mod jalr {
         // jalr x2, x1, -8  →  rd = 0x104, next_pc = 0x200 + (-8) = 0x1F8
         let instruction = encode_jalr(-8, 1, 2);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jalr(instruction, &mut next_pc);
+        cpu.handle_jalr(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[2], 0x104, "return address must be 0x104");
@@ -201,7 +201,7 @@ mod jalr {
         // jalr x0, x1, 0  →  x0 stays 0, next_pc = 0x400
         let instruction = encode_jalr(0, 1, 0);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jalr(instruction, &mut next_pc);
+        cpu.handle_jalr(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[0], 0, "x0 must always be 0");
@@ -220,7 +220,7 @@ mod jalr {
         // Expected: PC jumps to old rs1 value (0x300), x1 = old PC+4 = 0x104
         let instruction = encode_jalr(0, 1, 1);
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jalr(instruction, &mut next_pc);
+        cpu.handle_jalr(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         // The implementation saves rd_value = pc+4 before overwriting, so next_pc
@@ -238,7 +238,7 @@ mod jalr {
         let instruction = encode_jalr(4, 3, 4);
         let old_pc = cpu.pc;
         let mut next_pc = cpu.pc + 4;
-        cpu.handle_jalr(instruction, &mut next_pc);
+        cpu.handle_jalr(instruction, &mut next_pc).unwrap();
         cpu.pc = next_pc;
 
         assert_eq!(cpu.regs[4], old_pc + 4, "return address is always PC+4");
@@ -257,7 +257,7 @@ mod lui {
 
         // lui x1, 1  →  x1 = 1 << 12 = 0x1000
         let instruction = encode_lui(1, 1);
-        cpu.handle_lui(instruction);
+        cpu.handle_lui(instruction).unwrap();
 
         assert_eq!(cpu.regs[1], 0x1000, "x1 = 1 shifted left 12 bits");
     }
@@ -268,7 +268,7 @@ mod lui {
 
         // lui x1, 0xFFFFF  →  x1 = 0xFFFFF000
         let instruction = encode_lui(0xFFFFF, 1);
-        cpu.handle_lui(instruction);
+        cpu.handle_lui(instruction).unwrap();
 
         assert_eq!(cpu.regs[1], 0xFFFFF000, "x1 should be 0xFFFFF000");
     }
@@ -280,7 +280,7 @@ mod lui {
 
         // lui x2, 0  →  x2 = 0
         let instruction = encode_lui(0, 2);
-        cpu.handle_lui(instruction);
+        cpu.handle_lui(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0, "LUI with imm=0 clears the register");
     }
@@ -291,7 +291,7 @@ mod lui {
 
         // lui x0, 0xABCDE  →  x0 stays 0
         let instruction = encode_lui(0xABCDE, 0);
-        cpu.handle_lui(instruction);
+        cpu.handle_lui(instruction).unwrap();
 
         assert_eq!(cpu.regs[0], 0, "x0 must always be 0");
     }
@@ -302,7 +302,7 @@ mod lui {
 
         // lui x3, 0x12345  →  x3 = 0x12345000 (lower 12 bits must be 0)
         let instruction = encode_lui(0x12345, 3);
-        cpu.handle_lui(instruction);
+        cpu.handle_lui(instruction).unwrap();
 
         assert_eq!(
             cpu.regs[3] & 0xFFF,
@@ -316,9 +316,9 @@ mod lui {
     fn test_lui_multiple_registers() {
         let mut cpu = RiscvCpu::new();
 
-        cpu.handle_lui(encode_lui(0x00001, 1));
-        cpu.handle_lui(encode_lui(0x00010, 2));
-        cpu.handle_lui(encode_lui(0x00100, 3));
+        cpu.handle_lui(encode_lui(0x00001, 1)).unwrap();
+        cpu.handle_lui(encode_lui(0x00010, 2)).unwrap();
+        cpu.handle_lui(encode_lui(0x00100, 3)).unwrap();
 
         assert_eq!(cpu.regs[1], 0x0000_1000, "x1 = 0x1000");
         assert_eq!(cpu.regs[2], 0x0001_0000, "x2 = 0x10000");
@@ -338,7 +338,7 @@ mod auipc {
 
         // auipc x1, 1  →  x1 = PC + (1 << 12) = 0x1000 + 0x1000 = 0x2000
         let instruction = encode_auipc(1, 1);
-        cpu.handle_auipc(instruction);
+        cpu.handle_auipc(instruction).unwrap();
 
         assert_eq!(cpu.regs[1], 0x2000, "x1 = PC + 0x1000");
     }
@@ -350,7 +350,7 @@ mod auipc {
 
         // auipc x2, 0  →  x2 = PC + 0 = 0x300
         let instruction = encode_auipc(0, 2);
-        cpu.handle_auipc(instruction);
+        cpu.handle_auipc(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x300, "auipc with imm=0 copies PC into rd");
     }
@@ -362,7 +362,7 @@ mod auipc {
 
         // auipc x1, 2  →  x1 = 0 + (2 << 12) = 0x2000
         let instruction = encode_auipc(2, 1);
-        cpu.handle_auipc(instruction);
+        cpu.handle_auipc(instruction).unwrap();
 
         assert_eq!(cpu.regs[1], 0x2000, "x1 = 0 + 0x2000");
     }
@@ -374,7 +374,7 @@ mod auipc {
 
         // auipc x1, 0xFFFFF  →  x1 = 0 + 0xFFFFF000
         let instruction = encode_auipc(0xFFFFF, 1);
-        cpu.handle_auipc(instruction);
+        cpu.handle_auipc(instruction).unwrap();
 
         assert_eq!(cpu.regs[1], 0xFFFFF000, "x1 = 0xFFFFF000");
     }
@@ -386,7 +386,7 @@ mod auipc {
 
         // auipc x1, 1  →  with wrapping: 0xFFFF_F000 + 0x1000 wraps to 0x0000_0000
         let instruction = encode_auipc(1, 1);
-        cpu.handle_auipc(instruction);
+        cpu.handle_auipc(instruction).unwrap();
 
         let expected = 0xFFFF_F000u32.wrapping_add(0x1000);
         assert_eq!(cpu.regs[1], expected, "auipc should wrap correctly");
@@ -399,7 +399,7 @@ mod auipc {
 
         // auipc x0, 5  →  x0 stays 0
         let instruction = encode_auipc(5, 0);
-        cpu.handle_auipc(instruction);
+        cpu.handle_auipc(instruction).unwrap();
 
         assert_eq!(cpu.regs[0], 0, "x0 must always be 0");
     }
@@ -412,11 +412,11 @@ mod auipc {
         let imm: u32 = 0x10; // 0x10 << 12 = 0x10000
 
         cpu.pc = 0x0;
-        cpu.handle_auipc(encode_auipc(imm, 1));
+        cpu.handle_auipc(encode_auipc(imm, 1)).unwrap();
         let result_at_0 = cpu.regs[1];
 
         cpu.pc = 0x200;
-        cpu.handle_auipc(encode_auipc(imm, 2));
+        cpu.handle_auipc(encode_auipc(imm, 2)).unwrap();
         let result_at_200 = cpu.regs[2];
 
         assert_eq!(result_at_0, 0x0000_0000u32.wrapping_add(imm << 12));

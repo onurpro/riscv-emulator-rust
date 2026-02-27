@@ -40,7 +40,7 @@ mod addi {
         // addi x2, x1, 5  (x2 = 10 + 5 = 15)
         let instruction = encode_itype_imm(5, 1, 0b000, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 15);
         assert_eq!(cpu.regs[0], 0);
@@ -54,7 +54,7 @@ mod addi {
         // addi x2, x1, -1  (x2 = 10 + (-1) = 9)
         let instruction = encode_itype_imm(-1, 1, 0b000, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 9);
     }
@@ -67,7 +67,7 @@ mod addi {
         // addi x4, x3, 0  (MV pseudo-op)
         let instruction = encode_itype_imm(0, 3, 0b000, 4, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[4], 0x1234_5678);
     }
@@ -80,7 +80,7 @@ mod addi {
         // addi x0, x1, 5  (must be ignored; x0 always zero)
         let instruction = encode_itype_imm(5, 1, 0b000, 0, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[0], 0);
     }
@@ -93,7 +93,7 @@ mod addi {
         // addi x2, x1, 1  (0xFFFF_FFFF + 1 wraps to 0)
         let instruction = encode_itype_imm(1, 1, 0b000, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0);
     }
@@ -110,7 +110,7 @@ mod slti {
         // slti x2, x1, 10  (5 < 10 => x2 = 1)
         let instruction = encode_itype_imm(10, 1, 0b010, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 1);
     }
@@ -123,7 +123,7 @@ mod slti {
         // slti x2, x1, 10  (20 < 10? false => x2 = 0)
         let instruction = encode_itype_imm(10, 1, 0b010, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0);
     }
@@ -136,7 +136,7 @@ mod slti {
         // slti x2, x1, 0  (-5 < 0 => x2 = 1, signed compare)
         let instruction = encode_itype_imm(0, 1, 0b010, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 1);
     }
@@ -149,7 +149,7 @@ mod slti {
         // slti x2, x1, 10  (10 < 10? false => x2 = 0)
         let instruction = encode_itype_imm(10, 1, 0b010, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0);
     }
@@ -166,7 +166,7 @@ mod sltiu {
         // sltiu x2, x1, 10  (5 < 10 => x2 = 1, unsigned)
         let instruction = encode_itype_imm(10, 1, 0b011, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 1);
     }
@@ -179,7 +179,7 @@ mod sltiu {
         // sltiu x2, x1, 0  (0xFFFF_FFFF < 0 ? false => 0, unsigned)
         let instruction = encode_itype_imm(0, 1, 0b011, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0);
     }
@@ -192,7 +192,7 @@ mod sltiu {
         // sltiu x2, x1, 10  (10 < 10? false => 0, unsigned)
         let instruction = encode_itype_imm(10, 1, 0b011, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0);
     }
@@ -205,7 +205,7 @@ mod sltiu {
         // xori x2, x1, 0b0110  => 0b1010 ^ 0b0110 = 0b1100 (12)
         let instruction = encode_itype_imm(0b0110, 1, 0b100, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0b1100);
     }
@@ -218,7 +218,7 @@ mod sltiu {
         // xori x2, x1, -1  => bitwise NOT
         let instruction = encode_itype_imm(-1, 1, 0b100, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], !0x1234_5678);
     }
@@ -235,7 +235,7 @@ mod ori {
         // ori x2, x1, 0b0110 => 0b1001 | 0b0110 = 0b1111
         let instruction = encode_itype_imm(0b0110, 1, 0b110, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0b1111);
     }
@@ -248,7 +248,7 @@ mod ori {
         // ori x2, x1, 0 => x2 = x1
         let instruction = encode_itype_imm(0, 1, 0b110, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xDEAD_BEEF);
     }
@@ -261,7 +261,7 @@ mod ori {
         // ori x2, x1, -1 (sign-extended all-ones => result is all-ones)
         let instruction = encode_itype_imm(-1, 1, 0b110, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xFFFF_FFFF);
     }
@@ -278,7 +278,7 @@ mod andi {
         // andi x2, x1, 0b0110 => 0b1101 & 0b0110 = 0b0100
         let instruction = encode_itype_imm(0b0110, 1, 0b111, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0b0100);
     }
@@ -291,7 +291,7 @@ mod andi {
         // andi x2, x1, 0x0FF  => low 8 bits set, others cleared
         let instruction = encode_itype_imm(0x0FF, 1, 0b111, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xFF);
     }
@@ -304,7 +304,7 @@ mod andi {
         // andi x2, x1, 0 => 0 & anything = 0
         let instruction = encode_itype_imm(0, 1, 0b111, 2, 0x13);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0);
     }
@@ -321,7 +321,7 @@ mod slli {
         // slli x2, x1, 3  => 1 << 3 = 8
         let instruction = encode_shift_itype(3, 1, 2, 0b001, false);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 8);
     }
@@ -334,7 +334,7 @@ mod slli {
         // slli x2, x1, 0  => no change
         let instruction = encode_shift_itype(0, 1, 2, 0b001, false);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x1234_5678);
     }
@@ -347,7 +347,7 @@ mod slli {
         // slli x2, x1, 31  => 1 << 31 = 0x8000_0000
         let instruction = encode_shift_itype(31, 1, 2, 0b001, false);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x8000_0000);
     }
@@ -360,7 +360,7 @@ mod slli {
         // slli x2, x1, 1  => 0xFFFF_FFFF << 1 = 0xFFFF_FFFE (low bit drops)
         let instruction = encode_shift_itype(1, 1, 2, 0b001, false);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xFFFF_FFFE);
     }
@@ -377,7 +377,7 @@ mod srli {
         // srli x2, x1, 3  => 0b1000 >> 3 = 0b1
         let instruction = encode_shift_itype(3, 1, 2, 0b101, false);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0b1);
     }
@@ -390,7 +390,7 @@ mod srli {
         // srli x2, x1, 1 => logical shift, new MSB must be 0
         let instruction = encode_shift_itype(1, 1, 2, 0b101, false);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x4000_0000);
     }
@@ -403,7 +403,7 @@ mod srli {
         // srli x2, x1, 31  => 0x8000_0000 >> 31 = 1 (logical zero-fill)
         let instruction = encode_shift_itype(31, 1, 2, 0b101, false);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 1);
     }
@@ -416,7 +416,7 @@ mod srli {
         // srli x2, x1, 4  => 0x0FFF_FFFF
         let instruction = encode_shift_itype(4, 1, 2, 0b101, false);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x0FFF_FFFF);
     }
@@ -434,7 +434,7 @@ mod srai {
         // srai x2, x1, 1  => -10 >> 1 = -5 (0xFFFFFFFB)
         let instruction = encode_shift_itype(1, 1, 2, 0b101, true);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xFFFF_FFFB);
     }
@@ -447,7 +447,7 @@ mod srai {
         // srai x2, x1, 1  => 8 >> 1 = 4
         let instruction = encode_shift_itype(1, 1, 2, 0b101, true);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 4);
     }
@@ -460,7 +460,7 @@ mod srai {
         // srai x2, x1, 4  => arithmetic shift keeps sign bit set
         let instruction = encode_shift_itype(4, 1, 2, 0b101, true);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2] & 0x8000_0000, 0x8000_0000);
     }
@@ -473,7 +473,7 @@ mod srai {
         // srai x2, x1, 0  => no shift, value unchanged
         let instruction = encode_shift_itype(0, 1, 2, 0b101, true);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xDEAD_BEEF);
     }
@@ -486,7 +486,7 @@ mod srai {
         // srai x2, x1, 31  => all sign bits => 0xFFFF_FFFF (-1)
         let instruction = encode_shift_itype(31, 1, 2, 0b101, true);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xFFFF_FFFF);
     }
@@ -499,7 +499,7 @@ mod srai {
         // srai x2, x1, 31  => all zeros (sign bit is 0)
         let instruction = encode_shift_itype(31, 1, 2, 0b101, true);
 
-        cpu.handle_itype(instruction);
+        cpu.handle_itype(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0);
     }
@@ -515,7 +515,7 @@ mod load {
         cpu.regs[1] = 0x100;
 
         let instruction = encode_itype_imm(0, 1, 0b000, 2, 0x03);
-        cpu.handle_load(instruction);
+        cpu.handle_load(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x42);
     }
@@ -527,7 +527,7 @@ mod load {
         cpu.regs[1] = 0x100;
 
         let instruction = encode_itype_imm(0, 1, 0b000, 2, 0x03);
-        cpu.handle_load(instruction);
+        cpu.handle_load(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xFFFF_FFFE);
     }
@@ -539,7 +539,7 @@ mod load {
         cpu.regs[1] = 0x100;
 
         let instruction = encode_itype_imm(0, 1, 0b100, 2, 0x03);
-        cpu.handle_load(instruction);
+        cpu.handle_load(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x0000_00FE);
     }
@@ -552,7 +552,7 @@ mod load {
         cpu.regs[1] = 0x100;
 
         let instruction = encode_itype_imm(0, 1, 0b001, 2, 0x03);
-        cpu.handle_load(instruction);
+        cpu.handle_load(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x1234);
     }
@@ -565,7 +565,7 @@ mod load {
         cpu.regs[1] = 0x100;
 
         let instruction = encode_itype_imm(0, 1, 0b001, 2, 0x03);
-        cpu.handle_load(instruction);
+        cpu.handle_load(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xFFFF_8234);
     }
@@ -578,7 +578,7 @@ mod load {
         cpu.regs[1] = 0x100;
 
         let instruction = encode_itype_imm(0, 1, 0b101, 2, 0x03);
-        cpu.handle_load(instruction);
+        cpu.handle_load(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x0000_8234);
     }
@@ -593,7 +593,7 @@ mod load {
         cpu.regs[1] = 0x100;
 
         let instruction = encode_itype_imm(0, 1, 0b010, 2, 0x03);
-        cpu.handle_load(instruction);
+        cpu.handle_load(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x1234_5678);
     }
@@ -608,7 +608,7 @@ mod load {
         cpu.regs[1] = 0x100;
 
         let instruction = encode_itype_imm(4, 1, 0b010, 2, 0x03);
-        cpu.handle_load(instruction);
+        cpu.handle_load(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0xDDCC_BBAA);
     }
@@ -623,7 +623,7 @@ mod load {
         cpu.regs[1] = 0x100;
 
         let instruction = encode_itype_imm(-4, 1, 0b010, 2, 0x03);
-        cpu.handle_load(instruction);
+        cpu.handle_load(instruction).unwrap();
 
         assert_eq!(cpu.regs[2], 0x4433_2211);
     }

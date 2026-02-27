@@ -110,9 +110,9 @@ fn test_itype_chain() {
     ];
     load_program(&mut cpu, &program);
 
-    cpu.step(); // addi x1
-    cpu.step(); // addi x2
-    cpu.step(); // addi x3
+    cpu.step().unwrap(); // addi x1
+    cpu.step().unwrap(); // addi x2
+    cpu.step().unwrap(); // addi x3
 
     assert_eq!(cpu.regs[1], 10, "x1 should be 10");
     assert_eq!(cpu.regs[2], 15, "x2 should be 15");
@@ -138,7 +138,7 @@ fn test_itype_then_rtype() {
     load_program(&mut cpu, &program);
 
     for _ in 0..4 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[3], 27, "x3 should be 27 (20 + 7)");
@@ -165,7 +165,7 @@ fn test_rtype_chain() {
     load_program(&mut cpu, &program);
 
     for _ in 0..5 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[3], 0b0110, "XOR result should be 0b0110");
@@ -196,10 +196,10 @@ fn test_branch_taken_skips_instruction() {
     ];
     load_program(&mut cpu, &program);
 
-    cpu.step(); // addi x1
-    cpu.step(); // addi x2
-    cpu.step(); // beq  — branch taken, pc → 0x10
-    cpu.step(); // addi x4 (at 0x10)
+    cpu.step().unwrap(); // addi x1
+    cpu.step().unwrap(); // addi x2
+    cpu.step().unwrap(); // beq  — branch taken, pc → 0x10
+    cpu.step().unwrap(); // addi x4 (at 0x10)
 
     assert_eq!(cpu.regs[3], 0, "x3 should be 0 (skipped instruction)");
     assert_eq!(cpu.regs[4], 42, "x4 should be 42 (executed after branch)");
@@ -224,7 +224,7 @@ fn test_branch_not_taken_falls_through() {
     load_program(&mut cpu, &program);
 
     for _ in 0..4 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[3], 77, "x3 should be 77 (fall-through executed)");
@@ -262,12 +262,12 @@ fn test_countdown_loop() {
     load_program(&mut cpu, &program);
 
     // 2 setup instructions
-    cpu.step();
-    cpu.step();
+    cpu.step().unwrap();
+    cpu.step().unwrap();
 
     // 5 loop iterations × 3 instructions each = 15 steps
     for _ in 0..15 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[1], 0, "counter x1 should reach 0");
@@ -295,16 +295,16 @@ fn test_blt_bge_loop() {
     load_program(&mut cpu, &program);
 
     // Initial setup: 2 instructions
-    cpu.step(); // x1 = 0
-    cpu.step(); // x2 = 5
+    cpu.step().unwrap(); // x1 = 0
+    cpu.step().unwrap(); // x2 = 5
 
     // 5 iterations x 3 steps each
     for _ in 0..(5 * 3) {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     // Final step at 0x14
-    cpu.step();
+    cpu.step().unwrap();
 
     assert_eq!(cpu.regs[1], 5, "x1 should be 5");
     assert_eq!(
@@ -330,11 +330,11 @@ fn test_bltu_bgeu_unsigned_comparisons() {
 
     load_program(&mut cpu, &program);
 
-    cpu.step(); // addi x1
-    cpu.step(); // addi x2
-    cpu.step(); // bgeu
-    cpu.step(); // bltu
-    cpu.step(); // addi x5
+    cpu.step().unwrap(); // addi x1
+    cpu.step().unwrap(); // addi x2
+    cpu.step().unwrap(); // bgeu
+    cpu.step().unwrap(); // bltu
+    cpu.step().unwrap(); // addi x5
 
     assert_eq!(cpu.regs[3], 0, "x3 should be 0 (skipped)");
     assert_eq!(cpu.regs[4], 0, "x4 should be 0 (skipped)");
@@ -367,7 +367,7 @@ fn test_load_instructions_integration() {
     load_program(&mut cpu, &program);
 
     for _ in 0..5 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[2], 0x4433_2211, "x2 should be the loaded word");
@@ -410,7 +410,7 @@ fn test_store_instructions_integration() {
     load_program(&mut cpu, &program);
 
     for _ in 0..6 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[5], 0x08090A0B, "x5 should hold loaded word");
@@ -458,7 +458,7 @@ fn test_fibonacci_sequence() {
     load_program(&mut cpu, &program);
 
     for _ in 0..8 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[1], 0, "x1=F(0)=0");
@@ -493,7 +493,7 @@ fn test_data_dependent_branch() {
     load_program(&mut cpu, &program);
 
     for _ in 0..6 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[3], 7, "x3 should be 7 (sum)");
@@ -515,8 +515,8 @@ fn test_x0_write_protection_via_step() {
     ];
     load_program(&mut cpu, &program);
 
-    cpu.step(); // addi x0 — ignored
-    cpu.step(); // addi x2, x0, 7  => x2 = 0 + 7 = 7
+    cpu.step().unwrap(); // addi x0 — ignored
+    cpu.step().unwrap(); // addi x2, x0, 7  => x2 = 0 + 7 = 7
 
     assert_eq!(cpu.regs[0], 0, "x0 must always be 0");
     assert_eq!(cpu.regs[2], 7, "x2 = 0 + 7 = 7 (confirmed x0 reads as 0)");
@@ -555,7 +555,7 @@ fn test_shift_and_bitwise_chain() {
     load_program(&mut cpu, &program);
 
     for _ in 0..5 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[2], 16, "x2 = 1 << 4 = 16");
@@ -583,9 +583,9 @@ fn test_jal_forward_jump_and_link() {
     ];
     load_program(&mut cpu, &program);
 
-    cpu.step(); // addi x1
-    cpu.step(); // jal  x5  (jumps to 0x0C)
-    cpu.step(); // addi x3  (at 0x0C)
+    cpu.step().unwrap(); // addi x1
+    cpu.step().unwrap(); // jal  x5  (jumps to 0x0C)
+    cpu.step().unwrap(); // addi x3  (at 0x0C)
 
     assert_eq!(cpu.regs[1], 1, "x1 should be 1 (ran before jump)");
     assert_eq!(cpu.regs[5], 0x08, "x5 = link register = 0x04 + 4");
@@ -610,10 +610,10 @@ fn test_jal_jalr_call_return() {
     ];
     load_program(&mut cpu, &program);
 
-    cpu.step(); // jal  x1  (call, jumps to 0x08)
-    cpu.step(); // addi x3  (subroutine body)
-    cpu.step(); // jalr x0  (return to 0x04)
-    cpu.step(); // addi x2  (post-return code)
+    cpu.step().unwrap(); // jal  x1  (call, jumps to 0x08)
+    cpu.step().unwrap(); // addi x3  (subroutine body)
+    cpu.step().unwrap(); // jalr x0  (return to 0x04)
+    cpu.step().unwrap(); // addi x2  (post-return code)
 
     assert_eq!(cpu.regs[1], 0x04, "x1 = return address 0x04");
     assert_eq!(cpu.regs[3], 5, "x3 = 5 (subroutine ran)");
@@ -633,8 +633,8 @@ fn test_lui_addi_load_32bit_constant() {
     ];
     load_program(&mut cpu, &program);
 
-    cpu.step();
-    cpu.step();
+    cpu.step().unwrap();
+    cpu.step().unwrap();
 
     assert_eq!(cpu.regs[1], 0x1234_5678, "x1 should hold 0x12345678");
 }
@@ -657,8 +657,8 @@ fn test_lui_addi_sign_compensation() {
     let program = [encode_lui(upper, 1), encode_itype(lower, 1, 0b000, 1)];
     load_program(&mut cpu, &program);
 
-    cpu.step();
-    cpu.step();
+    cpu.step().unwrap();
+    cpu.step().unwrap();
 
     assert_eq!(cpu.regs[1], 0xDEAD_BEEF, "x1 should hold 0xDEADBEEF");
 }
@@ -690,7 +690,7 @@ fn test_auipc_pc_relative_memory_access() {
     load_program(&mut cpu, &program);
 
     for _ in 0..6 {
-        cpu.step();
+        cpu.step().unwrap();
     }
 
     assert_eq!(cpu.regs[1], 0x00, "x1 = auipc at PC=0");
@@ -723,12 +723,12 @@ fn test_jal_after_loop() {
     ];
     load_program(&mut cpu, &program);
 
-    cpu.step(); // setup: addi x1 = 3
+    cpu.step().unwrap(); // setup: addi x1 = 3
     for _ in 0..9 {
-        cpu.step();
+        cpu.step().unwrap();
     } // 3 iterations x (addi x2, addi x1, bne)
-    cpu.step(); // jal x3
-    cpu.step(); // addi x4 (at 0x18)
+    cpu.step().unwrap(); // jal x3
+    cpu.step().unwrap(); // addi x4 (at 0x18)
 
     assert_eq!(cpu.regs[1], 0, "counter should be 0 after loop");
     assert_eq!(cpu.regs[2], 3, "accumulator should be 3");

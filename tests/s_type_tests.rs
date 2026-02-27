@@ -32,7 +32,7 @@ mod sb {
 
         // sb x2, 4(x1) -> store byte 0x78 at 0x104
         let instruction = encode_stype(4, 2, 1, 0b000);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x104], 0x78);
         assert_eq!(cpu.bus[0x105], 0x00, "Should only write 1 byte");
@@ -46,7 +46,7 @@ mod sb {
 
         // sb x2, -4(x1) -> store byte 0xFF at 0xFC
         let instruction = encode_stype(-4, 2, 1, 0b000);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0xFC], 0xFF);
     }
@@ -59,7 +59,7 @@ mod sb {
 
         // sb x2, 0(x1) -> store byte 0xAB at 0x200
         let instruction = encode_stype(0, 2, 1, 0b000);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x200], 0xAB);
     }
@@ -72,7 +72,7 @@ mod sb {
 
         // sb should only store the lowest byte (0xEF)
         let instruction = encode_stype(0, 2, 1, 0b000);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x100], 0xEF, "Only low byte should be stored");
         assert_eq!(cpu.bus[0x101], 0x00, "Adjacent byte must not be touched");
@@ -89,7 +89,7 @@ mod sb {
 
         // sb x2, 0(x1) -> store 0x00, overwriting existing value
         let instruction = encode_stype(0, 2, 1, 0b000);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x100], 0x00);
     }
@@ -101,7 +101,7 @@ mod sb {
         cpu.regs[2] = 0x42;
 
         let instruction = encode_stype(4, 2, 0, 0b000);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[4], 0x42);
     }
@@ -118,7 +118,7 @@ mod sh {
 
         // sh x2, 4(x1) -> store halfword 0x5678 at 0x104 (little-endian: 0x78 at 0x104, 0x56 at 0x105)
         let instruction = encode_stype(4, 2, 1, 0b001);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x104], 0x78);
         assert_eq!(cpu.bus[0x105], 0x56);
@@ -133,7 +133,7 @@ mod sh {
 
         // sh x2, -2(x1) -> store halfword at 0xFE
         let instruction = encode_stype(-2, 2, 1, 0b001);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0xFE], 0xCD);
         assert_eq!(cpu.bus[0xFF], 0xAB);
@@ -147,7 +147,7 @@ mod sh {
 
         // sh x2, 0(x1) -> store halfword at 0x200
         let instruction = encode_stype(0, 2, 1, 0b001);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x200], 0xEF);
         assert_eq!(cpu.bus[0x201], 0xBE);
@@ -162,7 +162,7 @@ mod sh {
 
         // sh should only write the low 16 bits (0xBEEF)
         let instruction = encode_stype(0, 2, 1, 0b001);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x100], 0xEF, "Low byte of halfword");
         assert_eq!(cpu.bus[0x101], 0xBE, "High byte of halfword");
@@ -177,7 +177,7 @@ mod sh {
         cpu.regs[2] = 0xFFFF;
 
         let instruction = encode_stype(0, 2, 1, 0b001);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x100], 0xFF);
         assert_eq!(cpu.bus[0x101], 0xFF);
@@ -196,7 +196,7 @@ mod sw {
 
         // sw x2, 4(x1) -> store word 0x12345678 at 0x104 (little-endian: 0x78, 0x56, 0x34, 0x12)
         let instruction = encode_stype(4, 2, 1, 0b010);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x104], 0x78);
         assert_eq!(cpu.bus[0x105], 0x56);
@@ -213,7 +213,7 @@ mod sw {
 
         // sw x2, -4(x1) -> store word 0xDEADBEEF at 0xFC
         let instruction = encode_stype(-4, 2, 1, 0b010);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0xFC], 0xEF);
         assert_eq!(cpu.bus[0xFD], 0xBE);
@@ -229,7 +229,7 @@ mod sw {
 
         // sw x2, 0(x1) -> store at 0x200
         let instruction = encode_stype(0, 2, 1, 0b010);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x200], 0xBE);
         assert_eq!(cpu.bus[0x201], 0xBA);
@@ -251,7 +251,7 @@ mod sw {
 
         // sw x2, 0(x1) -> overwrite with zeros
         let instruction = encode_stype(0, 2, 1, 0b010);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x100], 0x00);
         assert_eq!(cpu.bus[0x101], 0x00);
@@ -266,7 +266,7 @@ mod sw {
         cpu.regs[2] = 0xFFFF_FFFF;
 
         let instruction = encode_stype(0, 2, 1, 0b010);
-        cpu.handle_store(instruction);
+        cpu.handle_store(instruction).unwrap();
 
         assert_eq!(cpu.bus[0x100], 0xFF);
         assert_eq!(cpu.bus[0x101], 0xFF);
