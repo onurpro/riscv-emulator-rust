@@ -58,6 +58,29 @@ fn encode_stype(imm: i32, rs2: u8, rs1: u8, funct3: u8) -> u32 {
         | 0x23
 }
 
+fn encode_jal(imm: i32, rd: u8) -> u32 {
+    let imm = imm as u32;
+    let i20 = (imm >> 20) & 0x1;
+    let i19_12 = (imm >> 12) & 0xFF;
+    let i11 = (imm >> 11) & 0x1;
+    let i10_1 = (imm >> 1) & 0x3FF;
+
+    (i20 << 31) | (i10_1 << 21) | (i11 << 20) | (i19_12 << 12) | ((rd as u32) << 7) | 0x6F
+}
+
+fn encode_jalr(imm: i32, rs1: u8, rd: u8) -> u32 {
+    let imm12 = (imm & 0xFFF) as u32;
+    (imm12 << 20) | ((rs1 as u32) << 15) | (0b000u32 << 12) | ((rd as u32) << 7) | 0x67
+}
+
+fn encode_lui(imm: u32, rd: u8) -> u32 {
+    ((imm & 0xFFFFF) << 12) | ((rd as u32) << 7) | 0x37
+}
+
+fn encode_auipc(imm: u32, rd: u8) -> u32 {
+    ((imm & 0xFFFFF) << 12) | ((rd as u32) << 7) | 0x17
+}
+
 // ── Helper: write a program into the CPU's bus starting at address 0 ──────────
 
 fn load_program(cpu: &mut RiscvCpu, instructions: &[u32]) {
@@ -378,7 +401,6 @@ fn test_store_instructions_integration() {
         encode_stype(0, 2, 1, 0b010), // 0x00: sw x2, 0(x1)
         encode_stype(4, 3, 1, 0b001), // 0x04: sh x3, 4(x1)
         encode_stype(6, 4, 1, 0b000), // 0x08: sb x4, 6(x1)
-
         // Now load them back into new registers to verify memory AND load interactions work
         encode_load(0, 1, 0b010, 5), // 0x0C: lw x5, 0(x1)
         encode_load(4, 1, 0b001, 6), // 0x10: lh x6, 4(x1)
@@ -393,10 +415,7 @@ fn test_store_instructions_integration() {
 
     assert_eq!(cpu.regs[5], 0x08090A0B, "x5 should hold loaded word");
     // Sign extension from loaded halfword (0x0C0D) goes to 0x00000C0D since MSB of 0x0C is 0
-    assert_eq!(
-        cpu.regs[6], 0x0C0D,
-        "x6 should hold loaded halfword"
-    );
+    assert_eq!(cpu.regs[6], 0x0C0D, "x6 should hold loaded halfword");
     assert_eq!(cpu.regs[7], 0x0E, "x7 should hold loaded unsigned byte");
 
     // We can also verify bus manually
@@ -442,17 +461,15 @@ fn test_fibonacci_sequence() {
         cpu.step();
     }
 
-    assert_eq!(cpu.regs[1], 0,  "x1=F(0)=0");
-    assert_eq!(cpu.regs[2], 1,  "x2=F(1)=1");
-    assert_eq!(cpu.regs[3], 1,  "x3=F(2)=1");
-    assert_eq!(cpu.regs[4], 2,  "x4=F(3)=2");
-    assert_eq!(cpu.regs[5], 3,  "x5=F(4)=3");
-    assert_eq!(cpu.regs[6], 5,  "x6=F(5)=5");
-    assert_eq!(cpu.regs[7], 8,  "x7=F(6)=8");
+    assert_eq!(cpu.regs[1], 0, "x1=F(0)=0");
+    assert_eq!(cpu.regs[2], 1, "x2=F(1)=1");
+    assert_eq!(cpu.regs[3], 1, "x3=F(2)=1");
+    assert_eq!(cpu.regs[4], 2, "x4=F(3)=2");
+    assert_eq!(cpu.regs[5], 3, "x5=F(4)=3");
+    assert_eq!(cpu.regs[6], 5, "x6=F(5)=5");
+    assert_eq!(cpu.regs[7], 8, "x7=F(6)=8");
     assert_eq!(cpu.regs[8], 13, "x8=F(7)=13");
 }
-
-
 
 /// Data-dependent branch: compute a value, then branch if it equals an expected value.
 ///
@@ -529,11 +546,11 @@ fn test_shift_and_bitwise_chain() {
     }
 
     let program = [
-        encode_itype(1, 0, 0b000, 1),  // addi x1, x0, 1
-        encode_slli_step(4, 1, 2),     // slli x2, x1, 4  => 16
+        encode_itype(1, 0, 0b000, 1),     // addi x1, x0, 1
+        encode_slli_step(4, 1, 2),        // slli x2, x1, 4  => 16
         encode_itype(0b111, 2, 0b110, 3), // ori  x3, x2, 7  => 16 | 7 = 23
-        encode_srli_step(1, 3, 4),     // srli x4, x3, 1  => 23 >> 1 = 11
-        encode_itype(0xF, 4, 0b111, 5), // andi x5, x4, 15 => 11 & 15 = 11
+        encode_srli_step(1, 3, 4),        // srli x4, x3, 1  => 23 >> 1 = 11
+        encode_itype(0xF, 4, 0b111, 5),   // andi x5, x4, 15 => 11 & 15 = 11
     ];
     load_program(&mut cpu, &program);
 
@@ -547,3 +564,175 @@ fn test_shift_and_bitwise_chain() {
     assert_eq!(cpu.regs[5], 11, "x5 = 11 & 15 = 11");
 }
 
+// ── JAL / JALR / LUI / AUIPC integration tests ───────────────────────────────
+
+/// JAL: jump forward over one instruction and verify the link register.
+///
+///   0x00: addi x1, x0, 1    ; x1 = 1
+///   0x04: jal  x5, +8       ; x5 = 0x08 (PC+4), PC -> 0x0C
+///   0x08: addi x2, x0, 99   ; skipped
+///   0x0C: addi x3, x0, 42   ; executes
+#[test]
+fn test_jal_forward_jump_and_link() {
+    let mut cpu = RiscvCpu::new();
+    let program = [
+        encode_itype(1, 0, 0b000, 1),  // 0x00: addi x1, x0, 1
+        encode_jal(8, 5),              // 0x04: jal  x5, +8 -> 0x0C; x5=0x08
+        encode_itype(99, 0, 0b000, 2), // 0x08: addi x2, x0, 99  (skipped)
+        encode_itype(42, 0, 0b000, 3), // 0x0C: addi x3, x0, 42
+    ];
+    load_program(&mut cpu, &program);
+
+    cpu.step(); // addi x1
+    cpu.step(); // jal  x5  (jumps to 0x0C)
+    cpu.step(); // addi x3  (at 0x0C)
+
+    assert_eq!(cpu.regs[1], 1, "x1 should be 1 (ran before jump)");
+    assert_eq!(cpu.regs[5], 0x08, "x5 = link register = 0x04 + 4");
+    assert_eq!(cpu.regs[2], 0, "x2 should be 0 (skipped)");
+    assert_eq!(cpu.regs[3], 42, "x3 should be 42 (ran after jump)");
+}
+
+/// Simulate a call/return idiom with JAL + JALR.
+///
+///   0x00: jal  x1, +8    ; call subroutine at 0x08; x1 = 0x04
+///   0x04: addi x2, x0, 7 ; runs after return
+///   0x08: addi x3, x0, 5 ; subroutine body
+///   0x0C: jalr x0, x1, 0 ; return (jump to x1 = 0x04)
+#[test]
+fn test_jal_jalr_call_return() {
+    let mut cpu = RiscvCpu::new();
+    let program = [
+        encode_jal(8, 1),             // 0x00: jal  x1, +8 -> 0x08; x1=0x04
+        encode_itype(7, 0, 0b000, 2), // 0x04: addi x2, x0, 7
+        encode_itype(5, 0, 0b000, 3), // 0x08: addi x3, x0, 5 (subroutine)
+        encode_jalr(0, 1, 0),         // 0x0C: jalr x0, x1, 0 (return)
+    ];
+    load_program(&mut cpu, &program);
+
+    cpu.step(); // jal  x1  (call, jumps to 0x08)
+    cpu.step(); // addi x3  (subroutine body)
+    cpu.step(); // jalr x0  (return to 0x04)
+    cpu.step(); // addi x2  (post-return code)
+
+    assert_eq!(cpu.regs[1], 0x04, "x1 = return address 0x04");
+    assert_eq!(cpu.regs[3], 5, "x3 = 5 (subroutine ran)");
+    assert_eq!(cpu.regs[2], 7, "x2 = 7 (post-return code ran)");
+}
+
+/// LUI + ADDI: standard RISC-V idiom for loading a 32-bit constant.
+///
+///   lui  x1, 0x12345   ; x1 = 0x12345000
+///   addi x1, x1, 0x678 ; x1 = 0x12345678
+#[test]
+fn test_lui_addi_load_32bit_constant() {
+    let mut cpu = RiscvCpu::new();
+    let program = [
+        encode_lui(0x12345, 1),           // lui  x1, 0x12345 -> 0x12345000
+        encode_itype(0x678, 1, 0b000, 1), // addi x1, x1, 0x678
+    ];
+    load_program(&mut cpu, &program);
+
+    cpu.step();
+    cpu.step();
+
+    assert_eq!(cpu.regs[1], 0x1234_5678, "x1 should hold 0x12345678");
+}
+
+/// LUI + sign-compensated ADDI: compiler idiom when low 12 bits have MSB set.
+///
+/// Target: 0xDEADBEEF
+///   low 12 bits: 0xEEF -> bit-11 is set -> signed = 0xEEF - 0x1000 = -0x111
+///   upper after compensation = (0xDEADBEEF + 0x800) >> 12 = 0xDEADC
+///   lui  x1, 0xDEADC   -> x1 = 0xDEADC000
+///   addi x1, x1, -0x111 -> x1 = 0xDEADBEEF
+#[test]
+fn test_lui_addi_sign_compensation() {
+    let mut cpu = RiscvCpu::new();
+    // 0xDEAD_BEEF: low 12 = 0xEEF (MSB set), so addi treats it as -0x111.
+    // Upper must be bumped by 1: (0xDEAD + 1) = 0xDEAE, combined = 0xDEADC
+    let upper: u32 = 0xDEADC;
+    let lower: i32 = 0xEEF_u32 as i32 - 0x1000; // = -0x111
+
+    let program = [encode_lui(upper, 1), encode_itype(lower, 1, 0b000, 1)];
+    load_program(&mut cpu, &program);
+
+    cpu.step();
+    cpu.step();
+
+    assert_eq!(cpu.regs[1], 0xDEAD_BEEF, "x1 should hold 0xDEADBEEF");
+}
+
+/// AUIPC: compute a PC-relative address and use it as a store/load pointer.
+///
+/// The program occupies 0x00-0x17 (6 instructions × 4 bytes). We must store
+/// data at an address past the program end, so we use offset 0x200 instead of
+/// 0x10 to avoid corrupting the instruction stream.
+///
+///   0x00: auipc x1, 0      ; x1 = 0 (PC-relative base)
+///   0x04: addi  x2, x1, 0x200 ; x2 = 0x200 (safe data address)
+///   0x08: addi  x3, x0, 0xAB  ; x3 = 0xAB
+///   0x0C: sb    x3, 0(x2)     ; bus[0x200] = 0xAB
+///   0x10: lb    x4, 0(x2)     ; signed load  -> 0xFFFFFFAB
+///   0x14: lbu   x5, 0(x2)     ; unsigned load -> 0x000000AB
+#[test]
+fn test_auipc_pc_relative_memory_access() {
+    let mut cpu = RiscvCpu::new();
+
+    let program = [
+        encode_auipc(0, 1),               // 0x00: auipc x1, 0     -> x1=0x00
+        encode_itype(0x200, 1, 0b000, 2), // 0x04: addi  x2, x1, 0x200 -> x2=0x200
+        encode_itype(0xAB, 0, 0b000, 3),  // 0x08: addi  x3, x0, 0xAB
+        encode_stype(0, 3, 2, 0b000),     // 0x0C: sb    x3, 0(x2)
+        encode_load(0, 2, 0b000, 4),      // 0x10: lb    x4, 0(x2) signed
+        encode_load(0, 2, 0b100, 5),      // 0x14: lbu   x5, 0(x2) unsigned
+    ];
+    load_program(&mut cpu, &program);
+
+    for _ in 0..6 {
+        cpu.step();
+    }
+
+    assert_eq!(cpu.regs[1], 0x00, "x1 = auipc at PC=0");
+    assert_eq!(cpu.regs[2], 0x200, "x2 = data address 0x200");
+    assert_eq!(cpu.bus[0x200], 0xAB, "memory byte should be 0xAB");
+    assert_eq!(cpu.regs[4], 0xFFFF_FFAB, "lb sign-extends 0xAB");
+    assert_eq!(cpu.regs[5], 0xAB, "lbu zero-extends 0xAB");
+}
+
+/// JAL used as a loop exit after a BNE countdown loop.
+///
+///   0x00: addi x1, x0, 3    ; counter = 3
+///   0x04: addi x2, x2, 1    ; accumulator++
+///   0x08: addi x1, x1, -1   ; counter--
+///   0x0C: bne  x1, x0, -8   ; back to 0x04 while x1 != 0
+///   0x10: jal  x3, +8       ; jump to 0x18, x3 = 0x14
+///   0x14: addi x5, x0, 99   ; skipped
+///   0x18: addi x4, x0, 42   ; executes
+#[test]
+fn test_jal_after_loop() {
+    let mut cpu = RiscvCpu::new();
+    let program = [
+        encode_itype(3, 0, 0b000, 1),  // 0x00: addi x1, x0, 3
+        encode_itype(1, 2, 0b000, 2),  // 0x04: addi x2, x2, 1
+        encode_itype(-1, 1, 0b000, 1), // 0x08: addi x1, x1, -1
+        encode_btype(-8, 1, 0, 0b001), // 0x0C: bne  x1, x0, -8 -> 0x04
+        encode_jal(8, 3),              // 0x10: jal  x3, +8 -> 0x18; x3=0x14
+        encode_itype(99, 0, 0b000, 5), // 0x14: addi x5, x0, 99 (skipped)
+        encode_itype(42, 0, 0b000, 4), // 0x18: addi x4, x0, 42
+    ];
+    load_program(&mut cpu, &program);
+
+    cpu.step(); // setup: addi x1 = 3
+    for _ in 0..9 {
+        cpu.step();
+    } // 3 iterations x (addi x2, addi x1, bne)
+    cpu.step(); // jal x3
+    cpu.step(); // addi x4 (at 0x18)
+
+    assert_eq!(cpu.regs[1], 0, "counter should be 0 after loop");
+    assert_eq!(cpu.regs[2], 3, "accumulator should be 3");
+    assert_eq!(cpu.regs[3], 0x14, "x3 = link address 0x14");
+    assert_eq!(cpu.regs[5], 0, "x5 should be 0 (skipped)");
+    assert_eq!(cpu.regs[4], 42, "x4 = 42");
+}

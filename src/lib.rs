@@ -37,6 +37,8 @@ impl RiscvCpu {
             0x63 => self.handle_btype(instruction, &mut next_pc),
             0x6F => self.handle_jal(instruction, &mut next_pc),
             0x67 => self.handle_jalr(instruction, &mut next_pc),
+            0x37 => self.handle_lui(instruction),
+            0x17 => self.handle_auipc(instruction),
             _ => println!("don't have this yet"),
         }
 
@@ -302,6 +304,16 @@ impl RiscvCpu {
         let imm = (instruction >> 12) & 0xFFFFF;
 
         let rd_value = imm << 12;
+        self.write_reg(rd, rd_value);
+    }
+
+    pub fn handle_auipc(&mut self, instruction: u32) {
+        let rd = (instruction >> 7) & 0x1F;
+        let imm = (instruction >> 12) & 0xFFFFF;
+
+        let offset = (imm << 12) as i32;
+
+        let rd_value = (self.pc as i32).wrapping_add(offset) as u32;
         self.write_reg(rd, rd_value);
     }
 
