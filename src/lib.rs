@@ -20,47 +20,73 @@ impl RiscvCpu {
         }
     }
 
-    pub fn step(&mut self) {
-        let instruction: u32 = self.fetch();
+    pub fn step(&mut self) -> Result<(), String> {
+        let instruction = self.load(self.pc, MemSize::Word, false)?;
 
         let mut next_pc = self.pc + 4;
 
-        println!("PC: {:#010x} | Instruction: {:#010x}", self.pc, instruction);
+        self.execute(instruction, &mut next_pc)?;
 
+        self.pc = next_pc;
+
+        Ok(())
+    }
+
+    pub fn execute(&mut self, instruction: u32, mut next_pc: &mut u32) -> Result<(), String> {
         let opcode = instruction & 0x7f;
 
         match opcode {
-            0x33 => self.handle_rtype(instruction),
-            0x13 => self.handle_itype(instruction),
-            0x03 => self.handle_load(instruction),
-            0x23 => self.handle_store(instruction),
-            0x63 => self.handle_btype(instruction, &mut next_pc),
-            0x6F => self.handle_jal(instruction, &mut next_pc),
-            0x67 => self.handle_jalr(instruction, &mut next_pc),
-            0x37 => self.handle_lui(instruction),
-            0x17 => self.handle_auipc(instruction),
+            0x33 => self.handle_rtype(instruction)?,
+            0x13 => self.handle_itype(instruction)?,
+            0x03 => self.handle_load(instruction)?,
+            0x23 => self.handle_store(instruction)?,
+            0x63 => self.handle_btype(instruction, &mut next_pc)?,
+            0x6F => self.handle_jal(instruction, &mut next_pc)?,
+            0x67 => self.handle_jalr(instruction, &mut next_pc)?,
+            0x37 => self.handle_lui(instruction)?,
+            0x17 => self.handle_auipc(instruction)?,
             _ => println!("don't have this yet"),
         }
 
-        self.pc = next_pc;
+        Ok(())
     }
 
-    pub fn load(&self, addr: u32, size: MemSize, signed: bool) -> u32 {
+    pub fn load(&self, addr: u32, size: MemSize, signed: bool) -> Result<u32, String> {
         let raw = self.read_raw(addr, size);
 
+        let byte_count = match size {
+            MemSize::Byte => 1,
+            MemSize::Half => 2,
+            MemSize::Word => 4,
+        };
+
+        if (addr as usize) + byte_count > self.bus.len() {
+            return Err(format!("Load Acces Fault: {:#x} is out of bounds", addr));
+        }
+
         if !signed {
-            return raw;
+            return Ok(raw);
         }
 
         match size {
-            MemSize::Byte => (raw as i8 as i32) as u32,
-            MemSize::Half => (raw as i16 as i32) as u32,
-            MemSize::Word => raw,
+            MemSize::Byte => Ok((raw as i8 as i32) as u32),
+            MemSize::Half => Ok((raw as i16 as i32) as u32),
+            MemSize::Word => Ok(raw),
         }
     }
 
-    pub fn store(&mut self, addr: u32, size: MemSize, value: u32) {
+    pub fn store(&mut self, addr: u32, size: MemSize, value: u32) -> Result<(), String> {
         let a = addr as usize;
+
+        let byte_count = match size {
+            MemSize::Byte => 1,
+            MemSize::Half => 2,
+            MemSize::Word => 4,
+        };
+
+        if a + byte_count > self.bus.len() {
+            return Err(format!("Store Access Fault: {:#x} is out of bounds", addr));
+        }
 
         match size {
             MemSize::Byte => self.bus[a] = (value & 0xFF) as u8,
@@ -75,9 +101,11 @@ impl RiscvCpu {
                 self.bus[a + 3] = ((value >> 24) & 0xFF) as u8;
             }
         }
+
+        Ok(())
     }
 
-    pub fn handle_rtype(&mut self, instruction: u32) {
+    pub fn handle_rtype(&mut self, instruction: u32) -> Result<(), String> {
         let rd = (instruction >> 7) & 0x1F;
         let funct3 = (instruction >> 12) & 0x7;
         let rs1 = (instruction >> 15) & 0x1F;
@@ -91,7 +119,7 @@ impl RiscvCpu {
             0x0 => match funct7 {
                 0x00 => rs1_value.wrapping_add(rs2_value),
                 0x20 => rs1_value.wrapping_sub(rs2_value),
-                _ => panic!("Invalid funct7 {:#x} for funct3 0x0", funct7),
+                _ => return Err(format!("Invalid funct7 {:#x} for funct3 0x0", funct7)),
             },
             0x4 => rs1_value ^ rs2_value,
             0x6 => rs1_value | rs2_value,
@@ -101,7 +129,10 @@ impl RiscvCpu {
                 0x00 => rs1_value >> (rs2_value & 0x1F),
                 0x20 => ((rs1_value as i32) >> (rs2_value & 0x1F)) as u32,
                 _ => {
-                    panic!("Invalid funct7 {:#x} for funct3 {:#x}", funct3, funct7);
+                    return Err(format!(
+                        "Invalid funct7 {:#x} for funct3 {:#x}",
+                        funct3, funct7
+                    ));
                 }
             },
             0x2 => {
@@ -118,15 +149,17 @@ impl RiscvCpu {
                     0
                 }
             }
-            _ => {
-                panic!("Invalid funct3 {:#x}", funct3)
-            }
+            _ => return Err(format!("Invalid funct3 {:#x}", funct3)),
         };
 
-        self.write_reg(rd, rd_value);
+        if rd != 0 {
+            self.write_reg(rd, rd_value);
+        }
+
+        Ok(())
     }
 
-    pub fn handle_itype(&mut self, instruction: u32) {
+    pub fn handle_itype(&mut self, instruction: u32) -> Result<(), String> {
         let rd = (instruction >> 7) & 0x1F;
         let funct3 = (instruction >> 12) & 0x7;
         let rs = (instruction >> 15) & 0x1F;
@@ -182,16 +215,18 @@ impl RiscvCpu {
                 }
             }
             _ => {
-                panic!("Unknown funct3: {:#x}", funct3);
+                return Err(format!("Unknown i-type funct3: {:#x}", funct3));
             }
         };
 
         if rd != 0 {
             self.write_reg(rd, rd_value);
         }
+
+        Ok(())
     }
 
-    pub fn handle_load(&mut self, instruction: u32) {
+    pub fn handle_load(&mut self, instruction: u32) -> Result<(), String> {
         let rd = (instruction >> 7) & 0x1F;
         let funct3 = (instruction >> 12) & 0x7;
         let rs = (instruction >> 15) & 0x1F;
@@ -200,18 +235,20 @@ impl RiscvCpu {
         let addr = rs_value.wrapping_add(imm) as u32;
 
         let rd_value = match funct3 {
-            0x0 => self.load(addr, MemSize::Byte, true),
-            0x1 => self.load(addr, MemSize::Half, true),
-            0x2 => self.load(addr, MemSize::Word, true),
-            0x4 => self.load(addr, MemSize::Byte, false),
-            0x5 => self.load(addr, MemSize::Half, false),
-            _ => panic!("Unknown funct3: {:#x}", funct3),
+            0x0 => self.load(addr, MemSize::Byte, true)?,
+            0x1 => self.load(addr, MemSize::Half, true)?,
+            0x2 => self.load(addr, MemSize::Word, true)?,
+            0x4 => self.load(addr, MemSize::Byte, false)?,
+            0x5 => self.load(addr, MemSize::Half, false)?,
+            _ => return Err(format!("Unknown load funct3: {:#x}", funct3)),
         };
 
         self.write_reg(rd, rd_value);
+
+        Ok(())
     }
 
-    pub fn handle_store(&mut self, instruction: u32) {
+    pub fn handle_store(&mut self, instruction: u32) -> Result<(), String> {
         let funct3 = (instruction >> 12) & 0x7;
         let rs1 = (instruction >> 15) & 0x1F;
         let rs2 = (instruction >> 20) & 0x1F;
@@ -228,14 +265,16 @@ impl RiscvCpu {
         let addr = (rs1_value as i32).wrapping_add(imm) as u32;
 
         match funct3 {
-            0x0 => self.store(addr, MemSize::Byte, rs2_value),
-            0x1 => self.store(addr, MemSize::Half, rs2_value),
-            0x2 => self.store(addr, MemSize::Word, rs2_value),
-            _ => panic!("Unknown S-type funct3: {:#x}", funct3),
+            0x0 => self.store(addr, MemSize::Byte, rs2_value)?,
+            0x1 => self.store(addr, MemSize::Half, rs2_value)?,
+            0x2 => self.store(addr, MemSize::Word, rs2_value)?,
+            _ => return Err(format!("Unknown S-type funct3: {:#x}", funct3)),
         }
+
+        Ok(())
     }
 
-    pub fn handle_btype(&mut self, instruction: u32, next_pc: &mut u32) {
+    pub fn handle_btype(&mut self, instruction: u32, next_pc: &mut u32) -> Result<(), String> {
         let funct3 = (instruction >> 12) & 0x7;
         let rs1 = (instruction >> 15) & 0x1F;
         let rs2 = (instruction >> 20) & 0x1F;
@@ -258,15 +297,17 @@ impl RiscvCpu {
             0x5 => (rs1_value as i32) >= (rs2_value as i32),
             0x6 => rs1_value < rs2_value,
             0x7 => rs1_value >= rs2_value,
-            _ => panic!("Unknown B-type funct3: {:#x}", funct3),
+            _ => return Err(format!("Unknown B-type funct3: {:#x}", funct3)),
         };
 
         if should_branch {
             *next_pc = (self.pc as i32).wrapping_add(imm) as u32;
         }
+
+        Ok(())
     }
 
-    pub fn handle_jal(&mut self, instruction: u32, next_pc: &mut u32) {
+    pub fn handle_jal(&mut self, instruction: u32, next_pc: &mut u32) -> Result<(), String> {
         let rd = (instruction >> 7) & 0x1F;
 
         let i19_12 = (instruction >> 12) & 0xFF;
@@ -280,9 +321,11 @@ impl RiscvCpu {
         let rd_value = self.pc + 4;
         self.write_reg(rd, rd_value);
         *next_pc = (self.pc as i32).wrapping_add(imm) as u32;
+
+        Ok(())
     }
 
-    pub fn handle_jalr(&mut self, instruction: u32, next_pc: &mut u32) {
+    pub fn handle_jalr(&mut self, instruction: u32, next_pc: &mut u32) -> Result<(), String> {
         let rd = (instruction >> 7) & 0x1F;
         let funct3 = (instruction >> 12) & 0x7;
         let rs = (instruction >> 15) & 0x1F;
@@ -297,17 +340,21 @@ impl RiscvCpu {
         }
 
         self.write_reg(rd, rd_value);
+
+        Ok(())
     }
 
-    pub fn handle_lui(&mut self, instruction: u32) {
+    pub fn handle_lui(&mut self, instruction: u32) -> Result<(), String> {
         let rd = (instruction >> 7) & 0x1F;
         let imm = (instruction >> 12) & 0xFFFFF;
 
         let rd_value = imm << 12;
         self.write_reg(rd, rd_value);
+
+        Ok(())
     }
 
-    pub fn handle_auipc(&mut self, instruction: u32) {
+    pub fn handle_auipc(&mut self, instruction: u32) -> Result<(), String> {
         let rd = (instruction >> 7) & 0x1F;
         let imm = (instruction >> 12) & 0xFFFFF;
 
@@ -315,12 +362,8 @@ impl RiscvCpu {
 
         let rd_value = (self.pc as i32).wrapping_add(offset) as u32;
         self.write_reg(rd, rd_value);
-    }
 
-    fn fetch(&self) -> u32 {
-        let addr = self.pc as usize;
-        let bytes = &self.bus[addr..addr + 4];
-        u32::from_le_bytes(bytes.try_into().unwrap())
+        Ok(())
     }
 
     fn write_reg(&mut self, reg: u32, value: u32) {
