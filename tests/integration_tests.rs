@@ -102,7 +102,7 @@ fn load_program(cpu: &mut RiscvCpu, instructions: &[u32]) {
 /// ADDI x3, x2, -3   ; x3 = 12
 #[test]
 fn test_itype_chain() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_itype(10, 0, 0b000, 1), // addi x1, x0, 10
         encode_itype(5, 1, 0b000, 2),  // addi x2, x1, 5
@@ -128,7 +128,7 @@ fn test_itype_chain() {
 /// SUB  x4, x3, x2   ; x4 = 20
 #[test]
 fn test_itype_then_rtype() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_itype(20, 0, 0b000, 1),           // addi x1, x0, 20
         encode_itype(7, 0, 0b000, 2),            // addi x2, x0, 7
@@ -154,7 +154,7 @@ fn test_itype_then_rtype() {
 /// AND  x5, x3, x4        ; x5 = 0b0110 & 0b1110 = 0b0110 (6)
 #[test]
 fn test_rtype_chain() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_itype(0b1010, 0, 0b000, 1),       // addi x1, x0, 10
         encode_itype(0b1100, 0, 0b000, 2),       // addi x2, x0, 12
@@ -186,7 +186,7 @@ fn test_rtype_chain() {
 ///   0x10: ADDI x4, x0, 42    ; should execute
 #[test]
 fn test_branch_taken_skips_instruction() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_itype(5, 0, 0b000, 1),  // 0x00: addi x1, x0, 5
         encode_itype(5, 0, 0b000, 2),  // 0x04: addi x2, x0, 5
@@ -214,7 +214,7 @@ fn test_branch_taken_skips_instruction() {
 ///   0x0C: ADDI x3, x0, 77   ; should execute
 #[test]
 fn test_branch_not_taken_falls_through() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_itype(5, 0, 0b000, 1),  // 0x00: addi x1, x0, 5
         encode_itype(9, 0, 0b000, 2),  // 0x04: addi x2, x0, 9
@@ -243,7 +243,7 @@ fn test_branch_not_taken_falls_through() {
 /// After 5 iterations: x1 = 0, x3 = 5.
 #[test]
 fn test_countdown_loop() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
 
     // Initialisation (before loop)
     //   0x00: addi x1, x0, 5
@@ -280,7 +280,7 @@ fn test_countdown_loop() {
 #[test]
 fn test_blt_bge_loop() {
     // Tests a loop that goes from x1 = 0 to x1 = 5.
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_itype(0, 0, 0b000, 1), // 0x00: addi x1, x0, 0
         encode_itype(5, 0, 0b000, 2), // 0x04: addi x2, x0, 5
@@ -315,7 +315,7 @@ fn test_blt_bge_loop() {
 
 #[test]
 fn test_bltu_bgeu_unsigned_comparisons() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
 
     // unsigned comparison with negative numbers (which are large positive in unsigned)
     let program = [
@@ -343,7 +343,7 @@ fn test_bltu_bgeu_unsigned_comparisons() {
 
 #[test]
 fn test_load_instructions_integration() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
 
     // Set up some data memory
     cpu.bus[0x200] = 0x11;
@@ -384,7 +384,7 @@ fn test_load_instructions_integration() {
 
 #[test]
 fn test_store_instructions_integration() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
 
     // Setup:
     // x1 = base address 0x200
@@ -443,7 +443,7 @@ fn test_store_instructions_integration() {
 /// Verifies that ADD correctly chains through the register file.
 #[test]
 fn test_fibonacci_sequence() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
 
     let program = [
         encode_itype(0, 0, 0b000, 1),            // 0x00: addi x1, x0, 0  (F0=0)
@@ -480,7 +480,7 @@ fn test_fibonacci_sequence() {
 ///   if (x4 == x0) branch over addi x5, x0, 99 → addi x5, x0, 42
 #[test]
 fn test_data_dependent_branch() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_itype(3, 0, 0b000, 1),            // 0x00: addi x1, x0, 3
         encode_itype(4, 0, 0b000, 2),            // 0x04: addi x2, x0, 4
@@ -506,7 +506,7 @@ fn test_data_dependent_branch() {
 ///   addi x0, x1, 5   ; should be silently discarded
 #[test]
 fn test_x0_write_protection_via_step() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     cpu.regs[1] = 100;
 
     let program = [
@@ -531,7 +531,7 @@ fn test_x0_write_protection_via_step() {
 ///   x5 = x4 & 0xF          ; 11 & 15 = 11
 #[test]
 fn test_shift_and_bitwise_chain() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
 
     fn encode_slli_step(shamt: u8, rs1: u8, rd: u8) -> u32 {
         let funct7 = 0b0000000u32;
@@ -574,7 +574,7 @@ fn test_shift_and_bitwise_chain() {
 ///   0x0C: addi x3, x0, 42   ; executes
 #[test]
 fn test_jal_forward_jump_and_link() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_itype(1, 0, 0b000, 1),  // 0x00: addi x1, x0, 1
         encode_jal(8, 5),              // 0x04: jal  x5, +8 -> 0x0C; x5=0x08
@@ -601,7 +601,7 @@ fn test_jal_forward_jump_and_link() {
 ///   0x0C: jalr x0, x1, 0 ; return (jump to x1 = 0x04)
 #[test]
 fn test_jal_jalr_call_return() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_jal(8, 1),             // 0x00: jal  x1, +8 -> 0x08; x1=0x04
         encode_itype(7, 0, 0b000, 2), // 0x04: addi x2, x0, 7
@@ -626,7 +626,7 @@ fn test_jal_jalr_call_return() {
 ///   addi x1, x1, 0x678 ; x1 = 0x12345678
 #[test]
 fn test_lui_addi_load_32bit_constant() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_lui(0x12345, 1),           // lui  x1, 0x12345 -> 0x12345000
         encode_itype(0x678, 1, 0b000, 1), // addi x1, x1, 0x678
@@ -648,7 +648,7 @@ fn test_lui_addi_load_32bit_constant() {
 ///   addi x1, x1, -0x111 -> x1 = 0xDEADBEEF
 #[test]
 fn test_lui_addi_sign_compensation() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     // 0xDEAD_BEEF: low 12 = 0xEEF (MSB set), so addi treats it as -0x111.
     // Upper must be bumped by 1: (0xDEAD + 1) = 0xDEAE, combined = 0xDEADC
     let upper: u32 = 0xDEADC;
@@ -677,7 +677,7 @@ fn test_lui_addi_sign_compensation() {
 ///   0x14: lbu   x5, 0(x2)     ; unsigned load -> 0x000000AB
 #[test]
 fn test_auipc_pc_relative_memory_access() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
 
     let program = [
         encode_auipc(0, 1),               // 0x00: auipc x1, 0     -> x1=0x00
@@ -711,7 +711,7 @@ fn test_auipc_pc_relative_memory_access() {
 ///   0x18: addi x4, x0, 42   ; executes
 #[test]
 fn test_jal_after_loop() {
-    let mut cpu = RiscvCpu::new();
+    let mut cpu = RiscvCpu::new(1024);
     let program = [
         encode_itype(3, 0, 0b000, 1),  // 0x00: addi x1, x0, 3
         encode_itype(1, 2, 0b000, 2),  // 0x04: addi x2, x2, 1

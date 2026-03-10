@@ -12,11 +12,11 @@ pub enum MemSize {
 }
 
 impl RiscvCpu {
-    pub fn new() -> Self {
+    pub fn new(ram_size: usize) -> Self {
         Self {
             regs: [0; 32],
             pc: 0,
-            bus: vec![0; 1024],
+            bus: vec![0; ram_size],
         }
     }
 
@@ -45,6 +45,11 @@ impl RiscvCpu {
             0x67 => self.handle_jalr(instruction, &mut next_pc)?,
             0x37 => self.handle_lui(instruction)?,
             0x17 => self.handle_auipc(instruction)?,
+            0x73 => {
+                if (instruction >> 20) == 0x1 {
+                    return Err(String::from("EBREAK: program halted normally"));
+                }
+            }
             _ => println!("don't have this yet"),
         }
 
@@ -196,7 +201,7 @@ impl RiscvCpu {
                         (rs_value as i32 >> shamt) as u32
                     }
                     _ => {
-                        panic!("Invalid funct7 {:#x} for funct3 0x5", funct7);
+                        return Err(format!("Invalid funct7 {:#x} for funct3 0x5", funct7));
                     }
                 }
             }
@@ -336,7 +341,7 @@ impl RiscvCpu {
 
         match funct3 {
             0x0 => *next_pc = (rs_value as i32).wrapping_add(imm) as u32,
-            _ => panic!("Unknown JALR funct3 {:#x}", funct3),
+            _ => return Err(format!("Unknown JALR funct3 {:#x}", funct3)),
         }
 
         self.write_reg(rd, rd_value);
@@ -364,6 +369,18 @@ impl RiscvCpu {
         self.write_reg(rd, rd_value);
 
         Ok(())
+    }
+
+    pub fn dump_registers(&self) {
+        println!("\n--- Register Dump ---");
+        for i in 0..32 {
+            print!("x{:02}: {:#010x}  ", i, self.regs[i]);
+            if (i + 1) % 4 == 0 {
+                println!();
+            } // Print 4 per line
+        }
+        println!("PC : {:#010x}", self.pc);
+        println!("---------------------\n");
     }
 
     fn write_reg(&mut self, reg: u32, value: u32) {

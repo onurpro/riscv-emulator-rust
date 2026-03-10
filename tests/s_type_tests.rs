@@ -24,7 +24,7 @@ mod sb {
 
     #[test]
     fn test_sb_positive_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         // base address
         cpu.regs[1] = 0x100;
         // value to store
@@ -40,7 +40,7 @@ mod sb {
 
     #[test]
     fn test_sb_negative_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0xFF;
 
@@ -53,7 +53,7 @@ mod sb {
 
     #[test]
     fn test_sb_zero_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x200;
         cpu.regs[2] = 0xAB;
 
@@ -66,7 +66,7 @@ mod sb {
 
     #[test]
     fn test_sb_stores_only_low_byte() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0xDEADBEEF;
 
@@ -82,7 +82,7 @@ mod sb {
 
     #[test]
     fn test_sb_zero_value() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.bus[0x100] = 0xFF; // pre-fill
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0x00;
@@ -96,7 +96,7 @@ mod sb {
 
     #[test]
     fn test_sb_x0_as_base() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         // x0 is always 0, so base = 0, imm = 4, addr = 4
         cpu.regs[2] = 0x42;
 
@@ -112,7 +112,7 @@ mod sh {
 
     #[test]
     fn test_sh_positive_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0x12345678;
 
@@ -127,7 +127,7 @@ mod sh {
 
     #[test]
     fn test_sh_negative_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0xABCD;
 
@@ -141,7 +141,7 @@ mod sh {
 
     #[test]
     fn test_sh_zero_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x200;
         cpu.regs[2] = 0xBEEF;
 
@@ -156,7 +156,7 @@ mod sh {
 
     #[test]
     fn test_sh_stores_only_low_halfword() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0xDEADBEEF;
 
@@ -172,7 +172,7 @@ mod sh {
 
     #[test]
     fn test_sh_all_ones() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0xFFFF;
 
@@ -190,7 +190,7 @@ mod sw {
 
     #[test]
     fn test_sw_positive_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0x12345678;
 
@@ -207,7 +207,7 @@ mod sw {
 
     #[test]
     fn test_sw_negative_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0xDEADBEEF;
 
@@ -223,7 +223,7 @@ mod sw {
 
     #[test]
     fn test_sw_zero_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x200;
         cpu.regs[2] = 0xCAFEBABE;
 
@@ -240,7 +240,7 @@ mod sw {
 
     #[test]
     fn test_sw_all_zeros() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         // Pre-fill 4 bytes
         cpu.bus[0x100] = 0xAA;
         cpu.bus[0x101] = 0xBB;
@@ -261,7 +261,7 @@ mod sw {
 
     #[test]
     fn test_sw_all_ones() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x100;
         cpu.regs[2] = 0xFFFF_FFFF;
 

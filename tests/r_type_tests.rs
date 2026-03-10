@@ -22,7 +22,7 @@ mod add_sub {
 
     #[test]
     fn test_add_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 10;
         cpu.regs[2] = 5;
 
@@ -36,7 +36,7 @@ mod add_sub {
 
     #[test]
     fn test_add_with_negative() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = -10i32 as u32;
         cpu.regs[2] = 3;
 
@@ -49,7 +49,7 @@ mod add_sub {
 
     #[test]
     fn test_add_overflow_wraps() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 1;
 
@@ -62,7 +62,7 @@ mod add_sub {
 
     #[test]
     fn test_sub_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 10;
         cpu.regs[2] = 5;
 
@@ -75,7 +75,7 @@ mod add_sub {
 
     #[test]
     fn test_sub_negative_result() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 5;
         cpu.regs[2] = 10;
 
@@ -88,7 +88,7 @@ mod add_sub {
 
     #[test]
     fn test_sub_underflow_wraps() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0;
         cpu.regs[2] = 1;
 
@@ -101,7 +101,7 @@ mod add_sub {
 
     #[test]
     fn test_add_does_not_write_x0() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 123;
         cpu.regs[2] = 456;
 
@@ -114,7 +114,7 @@ mod add_sub {
 
     #[test]
     fn test_sub_does_not_write_x0() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 123;
         cpu.regs[2] = 456;
 
@@ -127,7 +127,7 @@ mod add_sub {
 
     #[test]
     fn test_add_same_register_rs1_rs2_rd() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 5;
 
         // add x1, x1, x1  (x1 = 5 + 5 = 10, all three regs are the same)
@@ -139,7 +139,7 @@ mod add_sub {
 
     #[test]
     fn test_add_result_into_source_register() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 3;
         cpu.regs[2] = 7;
 
@@ -157,7 +157,7 @@ mod sll {
 
     #[test]
     fn test_sll_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 1;
         cpu.regs[2] = 3; // shift amount in low 5 bits
 
@@ -170,7 +170,7 @@ mod sll {
 
     #[test]
     fn test_sll_uses_low5_bits() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 1;
         cpu.regs[2] = 0b1_00000; // bit 5 set, low 5 bits = 0
 
@@ -183,7 +183,7 @@ mod sll {
 
     #[test]
     fn test_sll_max_shift_31() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 1;
         cpu.regs[2] = 31;
 
@@ -196,7 +196,7 @@ mod sll {
 
     #[test]
     fn test_sll_with_zero() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0;
         cpu.regs[2] = 5;
 
@@ -213,7 +213,7 @@ mod slt_sltu {
 
     #[test]
     fn test_slt_less_than_positive() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 5;
         cpu.regs[2] = 10;
 
@@ -226,7 +226,7 @@ mod slt_sltu {
 
     #[test]
     fn test_slt_greater_equal_positive() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 10;
         cpu.regs[2] = 10;
 
@@ -239,7 +239,7 @@ mod slt_sltu {
 
     #[test]
     fn test_slt_signed_negative_vs_positive() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = -1i32 as u32; // 0xFFFF_FFFF
         cpu.regs[2] = 1;
 
@@ -252,7 +252,7 @@ mod slt_sltu {
 
     #[test]
     fn test_sltu_unsigned() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 1;
         cpu.regs[2] = 0xFFFF_FFFF;
 
@@ -265,7 +265,7 @@ mod slt_sltu {
 
     #[test]
     fn test_sltu_unsigned_zero_vs_nonzero() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0;
         cpu.regs[2] = 123;
 
@@ -278,7 +278,7 @@ mod slt_sltu {
 
     #[test]
     fn test_sltu_equal_values() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 0xFFFF_FFFF;
 
@@ -291,7 +291,7 @@ mod slt_sltu {
 
     #[test]
     fn test_sltu_greater_than() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 1;
 
@@ -304,7 +304,7 @@ mod slt_sltu {
 
     #[test]
     fn test_slt_equal_values() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 42;
         cpu.regs[2] = 42;
 
@@ -321,7 +321,7 @@ mod xor_or_and {
 
     #[test]
     fn test_xor_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0b1010;
         cpu.regs[2] = 0b0110;
 
@@ -334,7 +334,7 @@ mod xor_or_and {
 
     #[test]
     fn test_xor_with_self() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xDEAD_BEEF;
         cpu.regs[2] = 0xDEAD_BEEF;
 
@@ -347,7 +347,7 @@ mod xor_or_and {
 
     #[test]
     fn test_or_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0b1010;
         cpu.regs[2] = 0b0110;
 
@@ -360,7 +360,7 @@ mod xor_or_and {
 
     #[test]
     fn test_or_with_zero() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0;
         cpu.regs[2] = 0x1234_5678;
 
@@ -373,7 +373,7 @@ mod xor_or_and {
 
     #[test]
     fn test_and_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0b1010;
         cpu.regs[2] = 0b0110;
 
@@ -386,7 +386,7 @@ mod xor_or_and {
 
     #[test]
     fn test_and_with_zero() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 0;
 
@@ -399,7 +399,7 @@ mod xor_or_and {
 
     #[test]
     fn test_xor_all_ones() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 0x0000_0000;
 
@@ -412,7 +412,7 @@ mod xor_or_and {
 
     #[test]
     fn test_or_all_ones_absorbs() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 0x1234_5678;
 
@@ -425,7 +425,7 @@ mod xor_or_and {
 
     #[test]
     fn test_and_all_ones_identity() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 0xFFFF_FFFF;
 
@@ -442,7 +442,7 @@ mod srl_sra {
 
     #[test]
     fn test_srl_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0b1000;
         cpu.regs[2] = 3;
 
@@ -455,7 +455,7 @@ mod srl_sra {
 
     #[test]
     fn test_srl_zero_fill() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x8000_0000; // MSB set
         cpu.regs[2] = 31;
 
@@ -468,7 +468,7 @@ mod srl_sra {
 
     #[test]
     fn test_srl_uses_low5_bits() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xF000_0000;
         cpu.regs[2] = 0b1_00000; // low 5 bits = 0
 
@@ -481,7 +481,7 @@ mod srl_sra {
 
     #[test]
     fn test_sra_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = (-8i32) as u32; // 0xFFFF_FFF8
         cpu.regs[2] = 1;
 
@@ -495,7 +495,7 @@ mod srl_sra {
 
     #[test]
     fn test_sra_shift_large() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = (-1i32) as u32; // all ones
         cpu.regs[2] = 31;
 
@@ -508,7 +508,7 @@ mod srl_sra {
 
     #[test]
     fn test_sra_uses_low5_bits() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = (-16i32) as u32;
         cpu.regs[2] = 0b1_00000; // low 5 bits = 0
 
@@ -521,7 +521,7 @@ mod srl_sra {
 
     #[test]
     fn test_sra_positive_value() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0x0000_0040; // 64
         cpu.regs[2] = 2;
 
@@ -536,7 +536,7 @@ mod srl_sra {
 
     #[test]
     fn test_srl_all_ones_zero_fill() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 4;
 
@@ -553,7 +553,7 @@ mod x0_behavior {
 
     #[test]
     fn test_rtype_reading_x0() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[0] = 0;
         cpu.regs[1] = 123;
 
@@ -567,7 +567,7 @@ mod x0_behavior {
 
     #[test]
     fn test_rtype_writing_to_x0_from_nonzero_regs() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 0xFFFF_FFFF;
 

@@ -25,15 +25,15 @@ All base integer instructions (R-Type, I-Type, B-Type) are now implemented and v
 
     [x] Handle sign-extension for sub-word loads
 
-    [ ] Robust Memory Access
+    [x] Robust Memory Access
 
 * Phase 3: The Runner
 
-    [ ] Fetch-Decode-Execute loop
+    [x] Fetch-Decode-Execute loop
 
-    [ ] Support for loading raw binary files
+    [x] Support for loading raw binary files
 
-    [ ] Error Handling & State Dumps
+    [x] Error Handling & State Dumps
 
     [ ] Basic CLI for stepping through code
 

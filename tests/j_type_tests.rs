@@ -50,7 +50,7 @@ mod jal {
 
     #[test]
     fn test_jal_positive_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x100;
 
         // jal x1, +8  →  rd = PC+4 = 0x104, next_pc = 0x100 + 8 = 0x108
@@ -65,7 +65,7 @@ mod jal {
 
     #[test]
     fn test_jal_negative_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x100;
 
         // jal x1, -8  →  rd = 0x104, next_pc = 0x100 + (-8) = 0x0F8
@@ -80,7 +80,7 @@ mod jal {
 
     #[test]
     fn test_jal_large_positive_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x000;
 
         // jal x2, +0x100  →  rd = 0x4, next_pc = 0x100
@@ -95,7 +95,7 @@ mod jal {
 
     #[test]
     fn test_jal_rd_zero_discards_return_address() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x200;
 
         // jal x0, +4  →  x0 must remain 0 (write to x0 is a no-op)
@@ -110,7 +110,7 @@ mod jal {
 
     #[test]
     fn test_jal_return_address_is_pc_plus_4() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x3FC;
 
         // Whatever the offset, rd must always be old_pc + 4
@@ -125,7 +125,7 @@ mod jal {
 
     #[test]
     fn test_jal_pc_zero_forward_jump() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         // pc = 0 (default)
 
         // jal x3, +20  →  rd = 4, next_pc = 20
@@ -146,7 +146,7 @@ mod jalr {
 
     #[test]
     fn test_jalr_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x100;
         cpu.regs[1] = 0x200; // base address
 
@@ -162,7 +162,7 @@ mod jalr {
 
     #[test]
     fn test_jalr_positive_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x100;
         cpu.regs[1] = 0x200;
 
@@ -178,7 +178,7 @@ mod jalr {
 
     #[test]
     fn test_jalr_negative_offset() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x100;
         cpu.regs[1] = 0x200;
 
@@ -194,7 +194,7 @@ mod jalr {
 
     #[test]
     fn test_jalr_rd_zero_discards_return_address() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x100;
         cpu.regs[1] = 0x400;
 
@@ -212,7 +212,7 @@ mod jalr {
     fn test_jalr_rs1_is_rd() {
         // When rd == rs1, the spec says rd = PC+4 and the jump uses the OLD rs1 value.
         // Our implementation reads rs1 before writing rd, so this should work correctly.
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x100;
         cpu.regs[1] = 0x300; // rs1 = x1
 
@@ -231,7 +231,7 @@ mod jalr {
 
     #[test]
     fn test_jalr_return_address_is_pc_plus_4() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x5FC;
         cpu.regs[3] = 0x800;
 
@@ -253,7 +253,7 @@ mod lui {
 
     #[test]
     fn test_lui_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
 
         // lui x1, 1  →  x1 = 1 << 12 = 0x1000
         let instruction = encode_lui(1, 1);
@@ -264,7 +264,7 @@ mod lui {
 
     #[test]
     fn test_lui_max_imm() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
 
         // lui x1, 0xFFFFF  →  x1 = 0xFFFFF000
         let instruction = encode_lui(0xFFFFF, 1);
@@ -275,7 +275,7 @@ mod lui {
 
     #[test]
     fn test_lui_zero_imm() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[2] = 0xDEAD; // pre-set to something non-zero
 
         // lui x2, 0  →  x2 = 0
@@ -287,7 +287,7 @@ mod lui {
 
     #[test]
     fn test_lui_rd_zero_is_nop() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
 
         // lui x0, 0xABCDE  →  x0 stays 0
         let instruction = encode_lui(0xABCDE, 0);
@@ -298,7 +298,7 @@ mod lui {
 
     #[test]
     fn test_lui_lower_12_bits_are_zero() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
 
         // lui x3, 0x12345  →  x3 = 0x12345000 (lower 12 bits must be 0)
         let instruction = encode_lui(0x12345, 3);
@@ -314,7 +314,7 @@ mod lui {
 
     #[test]
     fn test_lui_multiple_registers() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
 
         cpu.handle_lui(encode_lui(0x00001, 1)).unwrap();
         cpu.handle_lui(encode_lui(0x00010, 2)).unwrap();
@@ -333,7 +333,7 @@ mod auipc {
 
     #[test]
     fn test_auipc_basic() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x1000;
 
         // auipc x1, 1  →  x1 = PC + (1 << 12) = 0x1000 + 0x1000 = 0x2000
@@ -345,7 +345,7 @@ mod auipc {
 
     #[test]
     fn test_auipc_zero_imm() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x300;
 
         // auipc x2, 0  →  x2 = PC + 0 = 0x300
@@ -357,7 +357,7 @@ mod auipc {
 
     #[test]
     fn test_auipc_from_zero_pc() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         // PC = 0 (default)
 
         // auipc x1, 2  →  x1 = 0 + (2 << 12) = 0x2000
@@ -369,7 +369,7 @@ mod auipc {
 
     #[test]
     fn test_auipc_max_imm() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x0;
 
         // auipc x1, 0xFFFFF  →  x1 = 0 + 0xFFFFF000
@@ -381,7 +381,7 @@ mod auipc {
 
     #[test]
     fn test_auipc_wrapping_overflow() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0xFFFF_F000;
 
         // auipc x1, 1  →  with wrapping: 0xFFFF_F000 + 0x1000 wraps to 0x0000_0000
@@ -394,7 +394,7 @@ mod auipc {
 
     #[test]
     fn test_auipc_rd_zero_is_nop() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.pc = 0x100;
 
         // auipc x0, 5  →  x0 stays 0
@@ -406,7 +406,7 @@ mod auipc {
 
     #[test]
     fn test_auipc_result_is_pc_relative() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
 
         // Run AUIPC at two different PC values and verify both results are PC-relative.
         let imm: u32 = 0x10; // 0x10 << 12 = 0x10000

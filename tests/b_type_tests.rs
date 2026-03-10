@@ -30,7 +30,7 @@ mod beq {
 
     #[test]
     fn test_beq_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 10;
         cpu.regs[2] = 10;
         cpu.pc = 0x100;
@@ -46,7 +46,7 @@ mod beq {
 
     #[test]
     fn test_beq_not_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 10;
         cpu.regs[2] = 20;
         cpu.pc = 0x100;
@@ -62,7 +62,7 @@ mod beq {
 
     #[test]
     fn test_beq_backward_branch_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 42;
         cpu.regs[2] = 42;
         cpu.pc = 0x100;
@@ -78,7 +78,7 @@ mod beq {
 
     #[test]
     fn test_beq_x0_vs_x0_always_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         // x0 == x0 always -> BEQ always taken
         cpu.pc = 0x100;
 
@@ -96,7 +96,7 @@ mod bne {
 
     #[test]
     fn test_bne_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 10;
         cpu.regs[2] = 20;
         cpu.pc = 0x100;
@@ -112,7 +112,7 @@ mod bne {
 
     #[test]
     fn test_bne_not_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 10;
         cpu.regs[2] = 10;
         cpu.pc = 0x100;
@@ -128,7 +128,7 @@ mod bne {
 
     #[test]
     fn test_bne_backward_branch_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 7;
         cpu.regs[2] = 3;
         cpu.pc = 0x100;
@@ -144,7 +144,7 @@ mod bne {
 
     #[test]
     fn test_bne_signed_values_differ() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = -1i32 as u32; // 0xFFFF_FFFF
         cpu.regs[2] = 1;
         cpu.pc = 0x100;
@@ -164,7 +164,7 @@ mod blt {
 
     #[test]
     fn test_blt_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 5;
         cpu.regs[2] = 10;
         cpu.pc = 0x100;
@@ -180,7 +180,7 @@ mod blt {
 
     #[test]
     fn test_blt_signed_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = -10i32 as u32;
         cpu.regs[2] = 5;
         cpu.pc = 0x100;
@@ -196,7 +196,7 @@ mod blt {
 
     #[test]
     fn test_blt_not_taken_equal() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 7;
         cpu.regs[2] = 7;
         cpu.pc = 0x100;
@@ -212,7 +212,7 @@ mod blt {
 
     #[test]
     fn test_blt_not_taken_greater() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 20;
         cpu.regs[2] = 5;
         cpu.pc = 0x100;
@@ -228,7 +228,7 @@ mod blt {
 
     #[test]
     fn test_blt_backward_branch_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = -5i32 as u32;
         cpu.regs[2] = 0;
         cpu.pc = 0x100;
@@ -248,7 +248,7 @@ mod bge {
 
     #[test]
     fn test_bge_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 10;
         cpu.regs[2] = 5;
         cpu.pc = 0x100;
@@ -264,7 +264,7 @@ mod bge {
 
     #[test]
     fn test_bge_equal_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 10;
         cpu.regs[2] = 10;
         cpu.pc = 0x100;
@@ -280,7 +280,7 @@ mod bge {
 
     #[test]
     fn test_bge_not_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 3;
         cpu.regs[2] = 10;
         cpu.pc = 0x100;
@@ -296,7 +296,7 @@ mod bge {
 
     #[test]
     fn test_bge_signed_negative_not_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = -5i32 as u32;
         cpu.regs[2] = 1;
         cpu.pc = 0x100;
@@ -316,7 +316,7 @@ mod bltu {
 
     #[test]
     fn test_bltu_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 5;
         cpu.regs[2] = 0xFFFF_FFFF; // large unsigned
         cpu.pc = 0x100;
@@ -332,7 +332,7 @@ mod bltu {
 
     #[test]
     fn test_bltu_not_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 5;
         cpu.pc = 0x100;
@@ -348,7 +348,7 @@ mod bltu {
 
     #[test]
     fn test_bltu_equal_not_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xABCD;
         cpu.regs[2] = 0xABCD; // equal
         cpu.pc = 0x100;
@@ -364,7 +364,7 @@ mod bltu {
 
     #[test]
     fn test_bltu_backward_branch_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0;
         cpu.regs[2] = 0xFFFF_FFFF; // large unsigned
         cpu.pc = 0x100;
@@ -384,7 +384,7 @@ mod bgeu {
 
     #[test]
     fn test_bgeu_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 5;
         cpu.pc = 0x100;
@@ -400,7 +400,7 @@ mod bgeu {
 
     #[test]
     fn test_bgeu_equal_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xABC;
         cpu.regs[2] = 0xABC;
         cpu.pc = 0x100;
@@ -416,7 +416,7 @@ mod bgeu {
 
     #[test]
     fn test_bgeu_not_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 3;
         cpu.regs[2] = 0xFFFF_FFFF; // large unsigned
         cpu.pc = 0x100;
@@ -432,7 +432,7 @@ mod bgeu {
 
     #[test]
     fn test_bgeu_backward_branch_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         cpu.regs[1] = 0xFFFF_FFFF;
         cpu.regs[2] = 0xFFFF_FFFF; // equal -> taken
         cpu.pc = 0x100;
@@ -448,7 +448,7 @@ mod bgeu {
 
     #[test]
     fn test_bgeu_signed_as_large_unsigned_taken() {
-        let mut cpu = RiscvCpu::new();
+        let mut cpu = RiscvCpu::new(1024);
         // -1 as u32 = 0xFFFF_FFFF which is MAX unsigned
         cpu.regs[1] = -1i32 as u32;
         cpu.regs[2] = 1;
